@@ -1,0 +1,26 @@
+{
+    "components": [""],
+    "plugins": {
+        "system": [],
+        "content": []
+    },
+    "modules": {
+        "site": [],
+        "admin": []
+    },
+    "templates": {
+        "site": [],
+        "admin": []
+    },
+    "libraries": [""],
+    "files": [],
+    "package": {
+        "name": "",
+        "packagename": "",
+        "creationDate": "",
+        "label": "",
+        "description": "",
+        "version": "1.0.0",
+        "author": ""
+    }
+}
