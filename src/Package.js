@@ -1,5 +1,5 @@
 const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha } = require("./utils");
-const { srcDir, destDir, releaseDir, packageDest } = require('../config.json');
+const { srcDir, releaseDir, packageDest } = require('../config.json');
 const Component = require("./Component");
 const Archivo = require("./Archivo")
 const js2xml = require('js2xmlparser');
@@ -60,16 +60,13 @@ class Package {
         if (hasTemplates) {
             let templates = getTemplates();
 
-            for (const client in templates) {
-                let tmps = templates[client]
-                if (tmps.length > 0) {
-                    tmps.forEach(name => {
-                        let template = new Template(name, client)
+                if (templates.length > 0) {
+                    templates.forEach(name => {
+                        let template = new Template(name)
                         this.zipFiles.push(`${template.releaseDest}${template.zipFileName}`)
-                        this.files.push(this.parseTemplageElementFile(name, template.zipFileName, client))
+                        this.files.push(this.parseElementFile('template', `tmpl_${name}`, template.zipFileName))
                     })
                 }
-            }
 
         }
 
@@ -133,7 +130,7 @@ class Package {
         return this.parseClientElementFile(id, content, client, 'module');
     }
 
-    parseTemplageElementFile (id, content, client) {
+    parseTemplateElementFile (id, content) {
         return this.parseClientElementFile(id, content, client, 'template');
     }
 
@@ -214,7 +211,7 @@ class Package {
 
     get copyZipFilesTask() {
         let files = this.zipFiles;
-        
+
         if (files.length > 0) {
             let destino = this.destino + 'packages/';
             

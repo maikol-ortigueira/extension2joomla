@@ -10,17 +10,15 @@ if (getTemplates !== false) {
         backupTemplates = [],
         releaseTemplates = [];
 
-    for (let client in templates) {
-        templates[client].forEach(name => {
-            let temp = new Template(name, client)
+    templates.forEach(name => {
+        let temp = new Template(name)
 
-            cleanTemplates.push(temp.cleanTask)
-            copyTemplates.push(temp.copyTask)
-            watchTemplates.push(temp.watchTask)
-            backupTemplates.push(temp.backupTask)
-            releaseTemplates.push(temp.releaseTask)
-        })
-    }
+        cleanTemplates.push(temp.cleanTask)
+        copyTemplates.push(temp.copyTask)
+        watchTemplates.push(temp.watchTask)
+        backupTemplates.push(temp.backupTask)
+        releaseTemplates.push(temp.releaseTask)
+    })
 
     task(`cleanTemplates`, parallel(...cleanTemplates));
     task(`copyTemplates`, parallel(...copyTemplates));

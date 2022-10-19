@@ -174,7 +174,7 @@ const getXmlElement = (element, file) => {
 }
 
 const limpiarRuta = (ruta) => {
-    ruta = ruta.charAt(ruta.length - 1) == '/' ? ruta.toLowerCase() : ruta.toLowerCase() + '/';
+    ruta = ruta.charAt(ruta.length - 1) == '/' ? ruta : ruta + '/';
     return ruta;
 }
 
