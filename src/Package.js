@@ -1,4 +1,4 @@
-const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha } = require("./utils");
+const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames } = require("./utils");
 const { srcDir, releaseDir, packageDest } = require('../config.json');
 const Component = require("./Component");
 const Archivo = require("./Archivo")
@@ -10,6 +10,7 @@ const { task, src, series, dest } = require("gulp");
 const gulpClean = require("gulp-clean");
 const GulpZip = require("gulp-zip");
 const Modulo = require("./Modulo");
+const Library = require("./Library");
 
 
 class Package {
@@ -69,6 +70,16 @@ class Package {
                 }
 
         }
+
+        if (hasLibraries()) {
+            let libraries = getLibrariesNames();
+
+            libraries.forEach(name => {
+                let lib = new Library(name);
+                this.zipFiles.push(`${lib.releaseDest}${lib.zipFileName}`)
+                this.files.push(this.parseElementFile('library', `lib_${name}`, lib.zipFileName))
+            })
+        } 
 
         if (hasPlugins) {
             let groups = getPlugins();
