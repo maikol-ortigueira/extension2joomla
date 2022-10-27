@@ -61,8 +61,7 @@ if (utils.hasFiles()) {
     cleanTasks.push('cleanFiles');
     copyTasks.push('copyFiles');
     releaseTasks.push('releaseFiles');
-    backupTasks.push('backupFiles');
-    watchTasks.push('watchFiles');
+    // backupTasks.push('backupFiles');
 }
 
 if (utils.hasPackages()) {
