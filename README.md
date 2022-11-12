@@ -17,13 +17,13 @@ my-extensions
     |       |-- site
     |       |-- media
     |       '-- foo.xml
-    |--libraries 
+    |--libraries
     |   |
     |   '-- foo
     |       |-- language
     |       |-- src
     |       '-- foo.xml
-    |--modules 
+    |--modules
     |   |
     |   '-- [ site|admin ]
     |       |
@@ -33,7 +33,7 @@ my-extensions
     |           |-- anotherfolder
     |           |-- mod_foo.php
     |           '-- mod_foo.xml
-    |--plugins 
+    |--plugins
     |   |
     |   '-- [ system|user|content|... ]
     |       |
@@ -43,7 +43,7 @@ my-extensions
     |           |-- anotherfolder
     |           |-- foo.php
     |           '-- foo.xml
-    '--templates 
+    '--templates
         |
         '-- [ site|admin ]
             |
@@ -63,6 +63,6 @@ my-extensions
 
 ## Instalación
 Debes tener instalado en el equipo Node.js
-Realizar un clone de este repositorio a local. Dentro del repositorio local instalar paquetes node con npm update.
+Realizar un clone de este repositorio a local. Dentro del repositorio local instalar paquetes node con `npm install`.
 Renombrar fichero config.json.dist a config.json. Dentro de este fichero añadir los valores de las variables (rutas absolutas a las carpetas).
 Copiar el fichero extensions-config.json.dist y pegar dentro de la carpeta origen de los ficheros de extensiones.

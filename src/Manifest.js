@@ -1,13 +1,14 @@
 var xml2js = require('xml2js');
 var fs = require('fs');
+const { limpiarRuta } = require('./utils');
 
 // Clase Manifest
 class Manifest {
     /**
-     * @param string ruta 
+     * @param string ruta
      */
     constructor(ruta, tipo, nombre, grupo = '') {
-        ruta = ruta.charAt(ruta.length - 1) == '/' ? ruta : ruta + '/';
+        ruta = limpiarRuta(ruta);
         this.ruta = ruta;
 
         if (tipo.toLowerCase() === 'library')
@@ -36,7 +37,7 @@ class Manifest {
             case 'libraries':
             case 'files':
             case 'templates':
-                tipo = tipo + '/' + grupo + '/' + nombre + '/';
+                tipo = tipo + '/' + nombre + '/';
                 break;
         }
 
@@ -62,16 +63,16 @@ class Manifest {
         return this.manifest.media !== undefined;
     }
 
-    
+
     // set manifest() {
     //     xml2js.parseString(templateDetails, (err, result) => {
     //         if (err) {
     //             console.error(err);
     //             throw err;
     //         }
-    
+
     //         let manifest = result.extension;
-    
+
     //         let client = manifest.$.client; // cliente site o admin
     //         let folders = manifest.files[0].folder; // Array de nombres de carpetas de la plantilla
     //         let files = manifest.files[0].filename; // Array de nombres archivos de la plantilla
