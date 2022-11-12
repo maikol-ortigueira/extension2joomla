@@ -1,3 +1,4 @@
+const { series } = require('gulp');
 const Package = require('./Package');
 const utils = require('./utils');
 
@@ -6,6 +7,8 @@ var cleanTasks = []
     releaseTasks = [],
     backupTasks = [],
     watchTasks = [];
+
+var releasePackage;
 
 if (utils.hasComponents()) {
     var componentsTasks = require('./components');
@@ -58,17 +61,17 @@ if (utils.hasFiles()) {
     cleanTasks.push('cleanFiles');
     copyTasks.push('copyFiles');
     releaseTasks.push('releaseFiles');
-    backupTasks.push('backupFiles');
-    watchTasks.push('watchFiles');
+    // backupTasks.push('backupFiles');
 }
 
 if (utils.hasPackages()) {
     let pkg = new Package();
-    cleanTasks.push(pkg.cleanTask);
-    copyTasks.push(pkg.copyTask);
-    releaseTasks.push(pkg.releaseTask);
-    backupTasks.push(pkg.backupTask);
-    watchTasks.push(pkg.watchTask);
+    releasePackage = series(pkg.cleanTask, pkg.copyTask, pkg.releaseTask)
+    // cleanTasks.push(pkg.cleanTask);
+    // copyTasks.push(pkg.copyTask);
+    // releaseTasks.push(pkg.releaseTask);
+    //backupTasks.push(pkg.backupTask);
+    //watchTasks.push(pkg.watchTask);
 }
 
 if (utils.hasLibraries()) {
@@ -87,3 +90,4 @@ exports.copyTasks = copyTasks;
 exports.releaseTasks = releaseTasks;
 exports.backupTasks = backupTasks;
 exports.watchTasks = watchTasks;
+exports.releasePackage = releasePackage

@@ -1,5 +1,5 @@
-const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha } = require("./utils");
-const { srcDir, destDir, releaseDir, packageDest } = require('../config.json');
+const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames } = require("./utils");
+const { srcDir, releaseDir, packageDest } = require('../config.json');
 const Component = require("./Component");
 const Archivo = require("./Archivo")
 const js2xml = require('js2xmlparser');
@@ -10,6 +10,7 @@ const { task, src, series, dest } = require("gulp");
 const gulpClean = require("gulp-clean");
 const GulpZip = require("gulp-zip");
 const Modulo = require("./Modulo");
+const Library = require("./Library");
 
 
 class Package {
@@ -60,18 +61,25 @@ class Package {
         if (hasTemplates) {
             let templates = getTemplates();
 
-            for (const client in templates) {
-                let tmps = templates[client]
-                if (tmps.length > 0) {
-                    tmps.forEach(name => {
-                        let template = new Template(name, client)
+                if (templates.length > 0) {
+                    templates.forEach(name => {
+                        let template = new Template(name)
                         this.zipFiles.push(`${template.releaseDest}${template.zipFileName}`)
-                        this.files.push(this.parseTemplageElementFile(name, template.zipFileName, client))
+                        this.files.push(this.parseElementFile('template', `tmpl_${name}`, template.zipFileName))
                     })
                 }
-            }
 
         }
+
+        if (hasLibraries()) {
+            let libraries = getLibrariesNames();
+
+            libraries.forEach(name => {
+                let lib = new Library(name);
+                this.zipFiles.push(`${lib.releaseDest}${lib.zipFileName}`)
+                this.files.push(this.parseElementFile('library', `lib_${name}`, lib.zipFileName))
+            })
+        } 
 
         if (hasPlugins) {
             let groups = getPlugins();
@@ -133,7 +141,7 @@ class Package {
         return this.parseClientElementFile(id, content, client, 'module');
     }
 
-    parseTemplageElementFile (id, content, client) {
+    parseTemplateElementFile (id, content) {
         return this.parseClientElementFile(id, content, client, 'template');
     }
 
@@ -214,7 +222,7 @@ class Package {
 
     get copyZipFilesTask() {
         let files = this.zipFiles;
-        
+
         if (files.length > 0) {
             let destino = this.destino + 'packages/';
             

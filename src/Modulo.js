@@ -1,5 +1,5 @@
 const capitalize = require('capitalize')
-const { task, src, series, dest } = require('gulp')
+const { task, src, series, dest, watch } = require('gulp')
 const clean = require('gulp-clean')
 const GulpZip = require('gulp-zip')
 const { srcDir, destDir, releaseDir, backupDir } = require('../config.json')
@@ -53,7 +53,7 @@ class Modulo {
         this.cleanModulesFilesTask;
         this.cleanManifestFileTask;
 
-        task(`cleanModules${this.cCliente}${this.cNombre}`, series(...this.cleanModules));
+        task(`cleanModules${this.cCliente}${this.cNombre}`, series(...this.cleanModule));
 
         return `cleanModules${this.cCliente}${this.cNombre}`;        
     }

@@ -15,7 +15,7 @@ class Template {
         let ruta = limpiarRuta(srcDir);
         nombre = nombre.toLowerCase();
         this.cliente = cliente.toLowerCase() === 'site' ? 'site' : 'admin';
-        this.rutaDesde = `${ruta}templates/${this.cliente}/${nombre}/`;
+        this.rutaDesde = `${ruta}templates/${nombre}/`;
         this.rutaLanguagesDesde = `${this.rutaDesde}language/`;
         this.rutaMediaDesde = `${this.rutaDesde}/media/`;
         this.nombre = nombre;
@@ -33,7 +33,7 @@ class Template {
         this.rutaJoomlaLanguage = `${rutaJoomla}language/`;
 
         let destinoRelease = limpiarRuta(releaseDir);
-        this.releaseDest = destinoRelease + 'templates/' + this.cliente + '/' + this.nombre + '/';
+        this.releaseDest = destinoRelease + 'templates/' + this.nombre + '/';
         let destinoBackup = limpiarRuta(backupDir);
         this.backupDest = destinoBackup + 'templates/' + this.cliente + '/' + this.nombre + '/';
     }

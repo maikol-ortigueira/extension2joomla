@@ -10,7 +10,7 @@ const { limpiarRuta, getManisfestFiles, getManisfestFolders } = require('./utils
 class Archivo {
     constructor(nombre) {
         let ruta = limpiarRuta(srcDir);
-        this.rutaDesde = ruta;
+        this.rutaDesde = `${ruta}files/${nombre}/`;
         this.nombre = nombre.toLowerCase();
         this.cNombre = capitalize(this.nombre);
         let manifest = new Manifest(ruta, 'file', nombre);
@@ -39,9 +39,9 @@ class Archivo {
         return getManisfestFolders(this.manifiesto.fileset[0].files, this.rutaCompletaDesde);
     }
 
-    get manifestFile() {
-        return `${this.rutaDesde}administrator/manifests/files/${this.nombre}.xml`;
-    }
+    // get manifestFile() {
+    //     return `${this.rutaDesde}administrator/manifests/files/${this.nombre}.xml`;
+    // }
 
     get zipFileName() {
         return `${this.nombre}.v${this.version}.zip`;
@@ -70,7 +70,7 @@ class Archivo {
 
     // release Task
     get releaseTask() {
-        let desde = this.destino + '/**';
+        let desde = this.rutaDesde + '**';
         let destino = this.releaseDest;
         let filename = this.zipFileName;
 

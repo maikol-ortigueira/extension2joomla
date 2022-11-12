@@ -25,8 +25,8 @@ class Manifest {
         switch (tipo) {
             case 'modules':
                 nombre = nombre.substring(0, 4) == 'mod_' ? nombre : 'mod_' + nombre;
-                tipo = grupo.toLowerCase() == 'admin' || grupo.toLowerCase() == 'administrator' ? 'administrator/' + tipo : tipo;
-                tipo = tipo + '/' + nombre + '/';
+                tipo = grupo.toLowerCase() == 'admin' || grupo.toLowerCase() == 'administrator' ? tipo + '/admin' :  tipo + '/' + grupo.toLowerCase();
+                tipo = tipo + '/' + this.nombre + '/';
                 this.prefijo = 'mod';
                 break;
             case 'plugins':
@@ -41,7 +41,7 @@ class Manifest {
                 break;
         }
 
-        this.filename = this.tipo == 'templates' ? ruta + tipo + 'templateDetails.xml' : ruta + tipo + nombre + '.xml';
+        this.filename = this.tipo == 'templates' ? ruta + 'templates/' + nombre + '/' + 'templateDetails.xml' : ruta + tipo + nombre + '.xml';
 
         let archivoManifiesto = fs.readFileSync(this.filename, 'utf-8');
 
