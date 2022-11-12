@@ -45,6 +45,8 @@ class Component {
 
     get siteLanguageFileNames() {
         let languages = getNotEmptyFolderNames(`${this.rutaSiteDesde}language/`)
+        if (languages === false)
+            return false
         let langFiles = []
         languages.forEach(l => {
             langFiles.push(`${l}/com_${this.nombre}.ini`)
@@ -95,7 +97,10 @@ class Component {
     }
 
     get cleanSiteLanguageTask() {
-        let origen = this.siteLanguageFileNames.map(l => `${this.rutaJoomlaLanguageSite}${l}`);
+        let siteLanguages = this.siteLanguageFileNames
+        if (siteLanguages === false)
+            return
+        let origen = siteLanguages.map(l => `${this.rutaJoomlaLanguageSite}${l}`);
         task(`cleanComponent${this.cNombre}SiteLanguage`, () => {
             return src(origen, { read:false, allowEmpty:true })
             .pipe(clean({ force:true }))
@@ -173,8 +178,12 @@ class Component {
     }
 
     get copySiteLanguagesTask() {
+        let siteLanguages = this.siteLanguageFileNames
+
+        if (siteLanguages === false)
+            return;
         let destino = this.rutaJoomlaLanguageSite;
-        let origen  = this.siteLanguageFileNames.map(l => `${this.rutaSiteDesde}language/${l}`)
+        let origen  = siteLanguages.map(l => `${this.rutaSiteDesde}language/${l}`)
 
         task(`copyComponent${this.cNombre}SiteLanguage`, series(`cleanComponent${this.cNombre}SiteLanguage`, () => {
             return src(origen, { allowEmpty: true })

@@ -264,6 +264,10 @@ const getFecha = (local = 'es-ES') => {
 }
 
 const getNotEmptyFolderNames = (p) => {
+    let prueba = fs.existsSync(p)
+
+    if (fs.existsSync(p) === false)
+        return false
     return fs.readdirSync(p, { withFileTypes: true })
         .filter(dirent => dirent.isDirectory() && fs.readdirSync(`${p}${dirent.name}`).length !== 0)
         .map(dirent => dirent.name)
