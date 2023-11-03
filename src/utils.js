@@ -1,13 +1,19 @@
 const {
     extName,
     srcDir,
-    destDir
+    destDir,
+    releaseDir
 } = require('../config.json');
+
+const path = require('path');
+const sourcePath = path.join(__dirname, `../${srcDir}`); 
+const destPath = path.join(__dirname, `../${destDir}`);
+const releasePath = path.join(__dirname, `../${releaseDir}`);
+
 var fs = require('fs'),
     xmlQuery = require('xml-query'),
     xmlReader = require('xml-reader');
 
-const path = require('path');
 const log = require('log-beautify');
 
 var configPath = path.join(__dirname, '..');
@@ -23,16 +29,16 @@ if (extName == 'undefined' || extName == '') {
     return false;
 }
 
-if (!fs.existsSync(`${destDir}/extensions-config.json`)) {
+if (!fs.existsSync(`${sourcePath}/extensions-config.json`)) {
     console.error('\x1b[1m\x1b[33m=============================================================================================== ');
     console.error("\x1b[37m|\n|   \x1b[31m¡¡Error!!\x1b[37m   Falta el fichero de configuración de la extensión\n|");
     console.error("|   Debes crear un fichero con el nombre \"\x1b[32mextensions-config.json\x1b[37m\" en la siguiente carpeta:\n|")
-    console.error("|   \x1b[32m" + `${destDir}/`);
+    console.error("|   \x1b[32m" + `${sourcePath}/`);
     console.error("\x1b[37m|\n|   Puedes copiar, pegar y sustituir los valores del fichero \"extension-config.json.dist\".");
     console.error("|   Deberás renombrarlo eliminando la extension \".dist\"\n|");
     console.error('\x1b[33m===============================================================================================\x1b[0m');
 }
-const extConfig = require(`${destDir}/extensions-config.json`);
+const extConfig = require(`${sourcePath}/extensions-config.json`);
 
 const hasComponents = () => {
     let hasComponents = extConfig.hasOwnProperty('components') &&
@@ -295,5 +301,8 @@ module.exports = {
     getManifestLanguages,
     getDefault,
     getFecha,
-    getNotEmptyFolderNames
+    getNotEmptyFolderNames,
+    sourcePath,
+    destPath,
+    releasePath
 }

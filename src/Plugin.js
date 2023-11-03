@@ -1,7 +1,6 @@
 const { task, series, src, dest, watch } = require('gulp')
-const { srcDir, destDir, releaseDir, backupDir } = require('../config.json')
 const Manifest = require('./Manifest')
-const { limpiarRuta } = require('./utils')
+const { limpiarRuta, sourcePath, destPath, releasePath } = require('./utils')
 const capitalize = require('capitalize')
 const clean = require('gulp-clean')
 const GulpZip = require('gulp-zip')
@@ -12,7 +11,7 @@ class Plugin {
         this.cleanPlugin = [];
         this.copyPlugin = [];
 
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
         nombre = nombre.toLowerCase();
         this.grupo = grupo.toLowerCase();
         this.rutaDesde = `${ruta}plugins/${this.grupo}/${nombre}/`;
@@ -25,14 +24,12 @@ class Plugin {
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
 
-        let rutaJoomla = limpiarRuta(destDir);
+        let rutaJoomla = limpiarRuta(destPath);
         this.rutaJoomlaPlg = `${rutaJoomla}plugins/${this.grupo}/${this.nombre}/`;
         this.rutaJoomlaMedia = `${rutaJoomla}media/plg_${this.grupo}_${this.nombre}/`;
     
-        let destinoRelease = limpiarRuta(releaseDir);
+        let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'plugins/' + this.grupo + '/' + this.nombre + '/';
-        let destinoBackup = limpiarRuta(backupDir);
-        this.backupDest = destinoBackup + 'plugins/' + this.grupo + '/' + this.nombre + '/';
     }
 
     get zipFileName() {
@@ -152,19 +149,6 @@ class Plugin {
         })
 
         return `releasePlugin${this.cGrupo}${this.cNombre}`;        
-    }
-
-    // backup task
-    get backupTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.backupDest;
-
-        task(`backupPlugin${this.cGrupo}${this.cNombre}`, function(cb) {
-            return src(desde)
-                .pipe(dest(destino))
-        })
-
-        return `backupPlugin${this.cGrupo}${this.cNombre}`;        
     }
 }
 

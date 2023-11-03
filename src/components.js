@@ -7,7 +7,6 @@ if (hasComponents) {
     let cleanComponents = [], 
         copyComponents = [], 
         watchComponents = [],
-        backupComponents = [],
         releaseComponents = [];
 
     components.forEach(name => {
@@ -16,13 +15,11 @@ if (hasComponents) {
         cleanComponents.push(component.cleanTask);
         copyComponents.push(component.copyTask);
         watchComponents.push(component.watchTask);
-        backupComponents.push(component.backupTask);
         releaseComponents.push(component.releaseTask);
     });
 
     task(`cleanComponents`, parallel(...cleanComponents));
     task(`copyComponents`, parallel(...copyComponents));
     task(`watchComponents`, parallel(...watchComponents));
-    task(`backupComponents`, parallel(...backupComponents));
     task(`releaseComponents`, parallel(...releaseComponents));
 }

@@ -1,11 +1,8 @@
 const log = require('log-beautify');
-const boxen = require('boxen');
 
 const path = require('path');
 const configPath = path.join(__dirname, '..');
 const fs = require('fs');
-
-initialInfo();
 
 if (hasConfigJsonFile()) {
     var {
@@ -14,20 +11,23 @@ if (hasConfigJsonFile()) {
         destDir
     } = require('../config.json');
 
-    getConfigJsonInfo();
-    getExtensionConfigJsonInfo();
+    // getConfigJsonInfo();
+    // getExtensionConfigJsonInfo();
+
+    destDir = path.join(__dirname, destDir);
+    srcDir = path.join(__dirname, srcDir);
 }
 
 function getExtensionConfigJsonInfo(){
     if (!hasExtensionConfigFile()){
-        log.error_('Falta el fichero de configuración de la extensión ');
+        log.error('Falta el fichero de configuración de la extensión ');
         log.show();
         log.debug_('INSTRUCCIONES ')
         log.show('Edita el fichero \"extension-config.json.dist\" que se encuentra en');
         log.show(configPath);
         log.show();
         log.show('configura con las opciones de tu extensión y guarda en');
-        log.debug(`${destDir}/${extName}/`)
+        log.debug(`${srcDir}/${extName}/`)
         log.show();
         log.warn('Recuerda renombrar el fichero a extension-config.json')
         log.show();
@@ -43,13 +43,7 @@ function getExtensionConfigJsonInfo(){
 }
 
 function initialInfo() {
-    console.log(boxen('Información - Joomla2Extension', {
-        padding: 1,
-        borderColor: 'blueBright',
-        backgroundColor: 'blue',
-        borderStyle: 'round',
-        margin: 1
-    }));
+    console.log('Información - Joomla2Extension');
 
     log.debug("Instrucciones de configuración:");
     log.show();
@@ -58,17 +52,15 @@ function initialInfo() {
         log.show('Este fichero se encuentra en la siguiente ruta:');
         log.success(configPath);
     } else {
-        console.log(boxen(
-            `Falta el fichero config.json
-Abre el fichero config.json.dist que se encuentra en la ruta:
-${configPath}
-configura sus opciones, renómbralo a config.json y guarda en la misma carpeta
-`, {
-                borderColor: 'red',
-                align: 'center',
-                padding: 1
-            }
-        ))
+        log.error_('Falta el fichero config.json');
+        log.show();
+        log.show('================================================================================');
+        log.show('Abre el fichero config.json.dist que se encuentra en la ruta:')
+        log.success(configPath);
+        log.show();
+        log.show('configura sus opciones, renómbralo a config.json y guarda en la misma carpeta');
+        log.show('================================================================================');
+        log.show();
     }
 
 }
@@ -114,12 +106,17 @@ function hasConfigJsonFile() {
 }
 
 function hasExtensionConfigFile(){
-    if (fs.existsSync(`${destDir}/${extName}/extensions-config.json`)){
+    if (fs.existsSync(`${srcDir}/${extName}/extensions-config.json`)){
         return true;
     }
     return false;
 }
 
 function correctMessage(){
-    console.log(boxen('Comprueba que estos datos sean correctos\nSi no es así corríjalos', { borderColor:'yellow', borderStyle: 'round', margin:1, padding:1, align:'center'}))
+    console.log('Comprueba que estos datos sean correctos\nSi no es así corríjalos')
+}
+
+module.exports = {
+    initialInfo,
+    hasConfigJsonFile
 }

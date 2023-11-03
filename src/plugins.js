@@ -8,7 +8,6 @@ if (hasPlugins) {
     let cleanPlugins = [],
         copyPlugins = [],
         watchPlugins = [],
-        backupPlugins = [],
         releasePlugins = [];
 
     for (let type in groups) {
@@ -18,7 +17,6 @@ if (hasPlugins) {
             cleanPlugins.push(plugin.cleanTask)
             copyPlugins.push(plugin.copyTask)
             watchPlugins.push(plugin.watchTask)
-            backupPlugins.push(plugin.backupTask)
             releasePlugins.push(plugin.releaseTask)
         })
     }
@@ -26,6 +24,5 @@ if (hasPlugins) {
     task(`cleanPlugins`, parallel(...cleanPlugins));
     task(`copyPlugins`, parallel(...copyPlugins));
     task(`watchPlugins`, parallel(...watchPlugins));
-    task(`backupPlugins`, parallel(...backupPlugins));
     task(`releasePlugins`, parallel(...releasePlugins));
 }

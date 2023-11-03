@@ -1,4 +1,4 @@
-const { series, src } = require('gulp');
+const { series } = require('gulp');
 const Package = require('./Package');
 const utils = require('./utils');
 

@@ -2,9 +2,8 @@ const capitalize = require('capitalize')
 const { task, src, series, dest, watch } = require('gulp')
 const clean = require('gulp-clean')
 const GulpZip = require('gulp-zip')
-const { srcDir, destDir, releaseDir, backupDir } = require('../config.json')
 const Manifest = require('./Manifest')
-const { limpiarRuta } = require("./utils")
+const { limpiarRuta, sourcePath, destPath, releasePath } = require("./utils")
 
 class Modulo {
 
@@ -17,7 +16,7 @@ class Modulo {
         this.cleanModule = [];
         this.copyModule = [];
 
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
         nombre = nombre.toLowerCase();
         this.cliente = cliente.toLowerCase();
         this.rutaDesde = `${ruta}modules/${this.cliente}/${nombre}/`;
@@ -31,16 +30,13 @@ class Modulo {
         this.version = this.manifiesto.version;
         
         this.rutaCliente = this.cliente === 'site' ? '' : 'administrator/';
-        let rutaJoomla = limpiarRuta(destDir);
+        let rutaJoomla = limpiarRuta(destPath);
 
         this.rutaJoomlaMod = `${rutaJoomla}${this.rutaCliente}modules/mod_${this.nombre}/`;
         this.rutaJoomlaMedia = `${rutaJoomla}media/mod_${this.nombre}/`;
 
-        let destinoRelease = limpiarRuta(releaseDir);
+        let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'modules/' + this.cliente + '/' + this.nombre + '/';
-        let destinoBackup = limpiarRuta(backupDir)
-        this.backupDest = destinoBackup + 'modules/' + this.cliente + '/' + this.nombre + '/';
-
     }
 
     get zipFileName() {
@@ -161,19 +157,6 @@ class Modulo {
         })
 
         return `releaseModule${this.cCliente}${this.cNombre}`;        
-    }
-
-    // backup task
-    get backupTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.backupDest;
-
-        task(`backupModule${this.cCliente}${this.cNombre}`, function(cb) {
-            return src(desde)
-                .pipe(dest(destino))
-        })
-
-        return `backupModule${this.cCliente}${this.cNombre}`;        
     }
 }
 

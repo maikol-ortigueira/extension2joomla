@@ -1,6 +1,5 @@
 const Manifest = require("./Manifest");
-const { limpiarRuta, getNotEmptyFolderNames } = require("./utils");
-const { destDir, srcDir, releaseDir, backupDir } = require('../config.json');
+const { limpiarRuta, getNotEmptyFolderNames, destPath, sourcePath, releasePath } = require("./utils");
 const capitalize = require("capitalize");
 const { task, src, dest, series, watch } = require("gulp");
 const clean = require('gulp-clean');
@@ -12,7 +11,7 @@ class Template {
         this.cleanTemplate = [];
         this.copyTemplate = [];
 
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
         nombre = nombre.toLowerCase();
         this.cliente = cliente.toLowerCase() === 'site' ? 'site' : 'admin';
         this.rutaDesde = `${ruta}templates/${nombre}/`;
@@ -25,17 +24,15 @@ class Template {
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
         
-        var rutaJoomla = limpiarRuta(destDir);
+        var rutaJoomla = limpiarRuta(destPath);
         this.rutaCliente = cliente.toLowerCase() === 'site' ? '' : 'administrator/';
         this.rutaMediaCliente = cliente.toLowerCase() === 'site' ? 'site/' : 'administrator/';
         this.rutaJoomlaTmp = `${rutaJoomla}${this.rutaCliente}templates/${this.nombre}/`
         this.rutaJoomlaMedia = `${rutaJoomla}media/templates/${this.rutaMediaCliente}${this.nombre}/`
         this.rutaJoomlaLanguage = `${rutaJoomla}language/`;
 
-        let destinoRelease = limpiarRuta(releaseDir);
+        let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'templates/' + this.nombre + '/';
-        let destinoBackup = limpiarRuta(backupDir);
-        this.backupDest = destinoBackup + 'templates/' + this.cliente + '/' + this.nombre + '/';
     }
     get zipFileName() {
         return `tpl_${this.nombre}.v${this.version}.zip`;
@@ -190,19 +187,6 @@ class Template {
         })
 
         return `releaseTemplate${this.cNombre}`;        
-    }
-
-    // backup task
-    get backupTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.backupDest;
-
-        task(`backupTemplate${this.cNombre}`, function(cb) {
-            return src(desde)
-                .pipe(dest(destino))
-        })
-
-        return `backupTemplate${this.cNombre}`;        
     }
 }
 

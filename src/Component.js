@@ -1,7 +1,6 @@
-const { srcDir, destDir, releaseDir, backupDir } = require('../config.json');
 const capitalize = require('capitalize');
 const Manifest = require('./Manifest');
-const { limpiarRuta, getNotEmptyFolderNames } = require("./utils");
+const { limpiarRuta, getNotEmptyFolderNames, sourcePath, destPath, releasePath } = require("./utils");
 const { task, src, dest, series, watch } = require('gulp');
 const clean = require('gulp-clean');
 const GulpZip = require('gulp-zip');
@@ -13,7 +12,8 @@ class Component {
         this.cleanComponent = [];
         this.copyComponent = [];
         
-        let ruta = limpiarRuta(srcDir)
+        let ruta = limpiarRuta(sourcePath)
+
         nombre = nombre.toLowerCase();
         this.rutaDesde = `${ruta}components/${nombre}/`;
         this.rutaSiteDesde = `${this.rutaDesde}site/`
@@ -25,18 +25,16 @@ class Component {
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
 
-        var rutaJoomla = limpiarRuta(destDir);
+        var rutaJoomla = limpiarRuta(destPath);
         this.rutaJoomlaComSite = `${rutaJoomla}components/com_${this.nombre}/`;
         this.rutaJoomlaComMedia = `${rutaJoomla}media/com_${this.nombre}/`;
         this.rutaJoomlaComAdmin = `${rutaJoomla}administrator/components/com_${this.nombre}/`;
         this.rutaJoomlaLanguageSite = `${rutaJoomla}language/`;
         this.rutaJoomlaLanguageAdmin = `${rutaJoomla}administrator/language/`;
 
-        let destinoRelease = limpiarRuta(releaseDir);
+        let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'components/' + this.nombre + '/';
 
-        let destinoBackup = limpiarRuta(backupDir);
-        this.backupDest = destinoBackup + 'components/' + this.nombre + '/';
     }
 
     get zipFileName() {
@@ -264,20 +262,6 @@ class Component {
         })
 
         return `releaseComponent${this.cNombre}`;        
-    }
-
-    // backup Task
-    get backupTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.backupDest;
-
-        task(`backupComponent${this.cNombre}`, function(cb) {
-            return src(desde)
-                .pipe(dest(destino))
-        })
-
-        return `backupComponent${this.cNombre}`;        
-
     }
 }
 

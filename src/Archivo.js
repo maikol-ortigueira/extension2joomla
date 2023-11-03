@@ -3,13 +3,12 @@ const { task, src, series, dest } = require('gulp');
 const gulpClean = require('gulp-clean');
 const gulpForeach = require('gulp-foreach');
 const GulpZip = require('gulp-zip');
-const { srcDir, destDir, releaseDir } = require('../config.json');
 const Manifest = require('./Manifest');
-const { limpiarRuta, getManisfestFiles, getManisfestFolders } = require('./utils')
+const { limpiarRuta, getManisfestFiles, getManisfestFolders, sourcePath, destPath, releasePath } = require('./utils')
 
 class Archivo {
     constructor(nombre) {
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
         this.rutaDesde = `${ruta}files/${nombre}/`;
         this.nombre = nombre.toLowerCase();
         this.cNombre = capitalize(this.nombre);
@@ -17,7 +16,7 @@ class Archivo {
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
         this.rutaCompletaDesde = `${ruta}${this.manifiesto.fileset[0].files[0].$.target}/`;
-        let destino = destDir.charAt(destDir.length - 1) == '/' ? destDir : destDir + '/';
+        let destino = destPath.charAt(destPath.length - 1) == '/' ? destPath : destPath + '/';
         this.destino = `${destino}files/${this.nombre}/`;
         if (this.manifiesto.fileset[0].files[0] !== undefined) {
             this.destinoFicheros = `${this.destino}${this.manifiesto.fileset[0].files[0].$.folder}/`
@@ -25,7 +24,7 @@ class Archivo {
 
         this.copyFile = [];
 
-        let destinoRelease = releaseDir.charAt(releaseDir.length - 1) == '/' ? releaseDir : releaseDir + '/';
+        let destinoRelease = releasePath.charAt(releasePath.length - 1) == '/' ? releasePath : releasePath + '/';
         this.releaseDest = destinoRelease + 'files/' + this.nombre + '/';
 
         this.srcPathArrayLong = this.rutaCompletaDesde.replace(/^\/+|\/+$/g, '').split('/').length;

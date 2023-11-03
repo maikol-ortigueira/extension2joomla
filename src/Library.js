@@ -1,7 +1,6 @@
-const { srcDir,destDir, releaseDir, backupDir } = require('../config.json');
 const capitalize = require('capitalize');
 const Manifest = require('./Manifest');
-const { limpiarRuta } = require('./utils');
+const { limpiarRuta, destPath, sourcePath, releasePath } = require('./utils');
 const { task, series, src, dest, watch } = require('gulp');
 const clean = require('gulp-clean');
 const GulpZip = require('gulp-zip');
@@ -13,7 +12,7 @@ class Library {
         this.watchLibrary = [];
 
         
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
         nombre = nombre.toLowerCase();
         this.rutaDesde = `${ruta}libraries/${nombre}/`;
         this.nombre = nombre;
@@ -23,15 +22,13 @@ class Library {
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
 
-        var rutaJoomla = limpiarRuta(destDir)
+        var rutaJoomla = limpiarRuta(destPath)
         this.rutaJoomlaLib = `${rutaJoomla}libraries/${this.nombre}/`;
         this.rutaJoomlaManif = `${rutaJoomla}administrator/manifests/libraries/`;
         this.rutaJoomlaLanguage = `${this.rutaJoomlaLib}language/`
 
-        let destinoRelease = limpiarRuta(releaseDir);
+        let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'libraries/' + this.nombre + '/';
-        let destinoBackup = limpiarRuta(backupDir);
-        this.backupDest = destinoBackup + 'libraries/' + this.nombre + '/';
     }
 
     // Zip FileName
@@ -170,19 +167,6 @@ class Library {
         })
 
         return `releaseLibrary${this.cNombre}`
-    }
-
-    // backup Task
-    get backupTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.backupDest;
-
-        task(`backupLibrary${this.cNombre}`, () => {
-            return src(desde)
-                .pipe(dest(destino))
-        })
-
-        return `backupLibrary${this.cNombre}`
     }
 }
 

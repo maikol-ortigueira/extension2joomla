@@ -1,5 +1,4 @@
-const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames } = require("./utils");
-const { srcDir, releaseDir, packageDest } = require('../config.json');
+const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames, sourcePath, releasePath, destPath } = require("./utils");
 const Component = require("./Component");
 const Archivo = require("./Archivo")
 const js2xml = require('js2xmlparser');
@@ -30,12 +29,12 @@ class Package {
         this.files = [];
         this.zipFiles = [];
         this.copyPackage = [];
-        let ruta = limpiarRuta(srcDir);
+        let ruta = limpiarRuta(sourcePath);
 
-        let destinoRelease = releaseDir.charAt(releaseDir.length - 1) == '/' ? releaseDir : releaseDir + '/';
+        let destinoRelease = releasePath.charAt(releasePath.length - 1) == '/' ? releasePath : releasePath + '/';
         this.releaseDest = destinoRelease + 'packages/' + this.nombre + '/';
 
-        let destino = packageDest.charAt(packageDest.length - 1) == '/' ? packageDest : packageDest + '/';
+        let destino = destPath.charAt(destPath.length - 1) == '/' ? destPath : destPath + '/';
         this.destino = destino
 
         if (hasComponents) {
