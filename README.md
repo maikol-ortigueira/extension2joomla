@@ -66,3 +66,7 @@ Debes tener instalado en el equipo Node.js
 Realizar un clone de este repositorio a local. Dentro del repositorio local instalar paquetes node con `npm install`.
 Renombrar fichero config.json.dist a config.json. Dentro de este fichero añadir los valores de las variables (rutas absolutas a las carpetas).
 Copiar el fichero extensions-config.json.dist y pegar dentro de la carpeta origen de los ficheros de extensiones.
+
+### Override config.json
+
+Es posible utilizar un `config.json` personalizado por cada uno de los proyectos de desarrollo. Es necesario siempre disponer de un fichero de configuración `config.json` en este directorio, pero si además dispones de un fichero `config.json` en la carpeta indicada en la ruta de `srcDir` del fichero de configuración principal, se aplicarán las configuraciones de este segundo fichero.

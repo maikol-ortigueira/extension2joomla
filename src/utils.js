@@ -1,44 +1,26 @@
-const {
-    extName,
-    srcDir,
-    destDir,
-    releaseDir
-} = require('../config.json');
+const sourcePath = global.sourcePath;
+const destPath = global.destPath;
+const releasePath = global.releasePath;
+const extName = global.extName;
+const extConfig = global.extConfig;
 
 const path = require('path');
-const sourcePath = path.join(__dirname, `../${srcDir}`); 
-const destPath = path.join(__dirname, `../${destDir}`);
-const releasePath = path.join(__dirname, `../${releaseDir}`);
+const os = require('os');
 
 var fs = require('fs'),
     xmlQuery = require('xml-query'),
     xmlReader = require('xml-reader');
+const init = require('./init');
 
-const log = require('log-beautify');
-
-var configPath = path.join(__dirname, '..');
-
-if (extName == 'undefined' || extName == '') {
-    console.error('\x1b[1m\x1b[33m=============================================================================================== ');
-    console.error("\x1b[37m|\n|   \x1b[31m!Error en el fichero \x1b[37m\"config.json\"\x1b[31m!\x1b[37m\n|");
-    console.error("|   Este fichero se encuentra en la carpeta:\n|");
-    console.error("|\x1b[32m   " + configPath + "\n\x1b[37m|");
-    console.error("|   Falta indicar el nombre de la extensión en la variable \x1b[34m\"extName\": \"\x1b[36mnombre_de_la_extension\x1b[34m\"\x1b[31m\n\x1b[37m|");
-    console.error('\x1b[33m===============================================================================================\x1b[0m');
-
-    return false;
-}
-
-if (!fs.existsSync(`${sourcePath}/extensions-config.json`)) {
-    console.error('\x1b[1m\x1b[33m=============================================================================================== ');
-    console.error("\x1b[37m|\n|   \x1b[31m¡¡Error!!\x1b[37m   Falta el fichero de configuración de la extensión\n|");
-    console.error("|   Debes crear un fichero con el nombre \"\x1b[32mextensions-config.json\x1b[37m\" en la siguiente carpeta:\n|")
-    console.error("|   \x1b[32m" + `${sourcePath}/`);
-    console.error("\x1b[37m|\n|   Puedes copiar, pegar y sustituir los valores del fichero \"extension-config.json.dist\".");
-    console.error("|   Deberás renombrarlo eliminando la extension \".dist\"\n|");
-    console.error('\x1b[33m===============================================================================================\x1b[0m');
-}
-const extConfig = require(`${sourcePath}/extensions-config.json`);
+    // if (!fs.existsSync(`${sourcePath}/extensions-config.json`)) {
+//     console.error('\x1b[1m\x1b[33m=============================================================================================== ');
+//     console.error("\x1b[37m|\n|   \x1b[31m¡¡Error!!\x1b[37m   Falta el fichero de configuración de la extensión\n|");
+//     console.error("|   Debes crear un fichero con el nombre \"\x1b[32mextensions-config.json\x1b[37m\" en la siguiente carpeta:\n|")
+//     console.error("|   \x1b[32m" + `${sourcePath}/`);
+//     console.error("\x1b[37m|\n|   Puedes copiar, pegar y sustituir los valores del fichero \"extension-config.json.dist\".");
+//     console.error("|   Deberás renombrarlo eliminando la extension \".dist\"\n|");
+//     console.error('\x1b[33m===============================================================================================\x1b[0m');
+// }
 
 const hasComponents = () => {
     let hasComponents = extConfig.hasOwnProperty('components') &&
@@ -179,6 +161,13 @@ const getXmlElement = (element, file) => {
     return xq.find(element).text();
 }
 
+const resolveHome = (filepath) => {
+    if (filepath[0] === '~') {
+        return path.join(os.homedir(), filepath.slice(1));
+    }
+    return filepath;
+}
+
 const limpiarRuta = (ruta) => {
     ruta = ruta.charAt(ruta.length - 1) == '/' ? ruta : ruta + '/';
     return ruta;
@@ -302,6 +291,7 @@ module.exports = {
     getDefault,
     getFecha,
     getNotEmptyFolderNames,
+    resolveHome,
     sourcePath,
     destPath,
     releasePath

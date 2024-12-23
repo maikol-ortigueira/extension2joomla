@@ -85,4 +85,4 @@ exports.copyTasks = copyTasks;
 exports.releaseTasks = releaseTasks;
 exports.backupTasks = backupTasks;
 exports.watchTasks = watchTasks;
-exports.releasePackage = releasePackage
+exports.releasePackage = releasePackage;
