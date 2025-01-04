@@ -1,0 +1,44 @@
+{
+    "components": [
+        {
+            "name": "foo",
+            "ars": {
+                "category": {
+                    "title": "Fake ARS Category title",
+                    "description": "Category description"
+                },
+                "item": {
+                    "title": "ARS Item title",
+                    "type": "ARS item type. Options are: [file|link]",
+                    "link": "if item.type === link must identify this param"
+                },
+                "maturity": "options [alpha|beta|rc|stable]",
+                "published": "[0|1]",
+                "changelog_path": "if empty will use this path"
+            }
+        }
+    ],
+    "plugins": {
+        "system": [],
+        "content": []
+    },
+    "modules": {
+        "site": [],
+        "admin": []
+    },
+    "templates": {
+        "site": [],
+        "admin": []
+    },
+    "libraries": [""],
+    "files": [],
+    "package": {
+        "name": "",
+        "packagename": "",
+        "creationDate": "",
+        "label": "",
+        "description": "",
+        "version": "1.0.0",
+        "author": ""
+    }
+}

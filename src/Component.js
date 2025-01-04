@@ -1,29 +1,35 @@
 const capitalize = require('capitalize');
 const Manifest = require('./Manifest');
-const { limpiarRuta, getNotEmptyFolderNames, sourcePath, destPath, releasePath } = require("./utils");
+const { limpiarRuta, getNotEmptyFolderNames, sourcePath, destPath, releasePath, uploadFile } = require("./utils");
 const { task, src, dest, series, watch } = require('gulp');
 const clean = require('gulp-clean');
 const GulpZip = require('gulp-zip');
+const ARS = require('./ARS/ARS');
+const fs = require('fs');
 
 class Component {
-
-    constructor(nombre) {
-
+    constructor(nombre, ars) {
         this.cleanComponent = [];
         this.copyComponent = [];
-        
+        this.ars = ars;
+
         let ruta = limpiarRuta(sourcePath)
 
         nombre = nombre.toLowerCase();
-        this.rutaDesde = `${ruta}components/${nombre}/`;
-        this.rutaSiteDesde = `${this.rutaDesde}site/`
-        this.rutaAdminDesde = `${this.rutaDesde}admin/`
-        this.nombre = nombre;
-        this.cNombre = capitalize(nombre);
 
         let manifest = new Manifest(ruta, 'component', nombre);
         this.manifiesto = manifest.manifiesto;
         this.version = this.manifiesto.version;
+
+        let site = this.manifiesto.files[0].$.folder !== undefined ? this.manifiesto.files[0].$.folder : 'site';
+        let admin = this.manifiesto.administration[0].files[0].$.folder !== undefined ? this.manifiesto.administration[0].files[0].$.folder : 'admin';
+
+        this.rutaDesde = `${ruta}components/${nombre}/`;
+        this.rutaSiteDesde = `${this.rutaDesde}${site}/`
+        this.rutaAdminDesde = `${this.rutaDesde}${admin}/`
+        this.nombre = nombre;
+        this.cNombre = capitalize(nombre);
+
 
         var rutaJoomla = limpiarRuta(destPath);
         this.rutaJoomlaComSite = `${rutaJoomla}components/com_${this.nombre}/`;
@@ -34,11 +40,15 @@ class Component {
 
         let destinoRelease = limpiarRuta(releasePath);
         this.releaseDest = destinoRelease + 'components/' + this.nombre + '/';
-
+        this.uploadDest = 'components/' + this.nombre + '/';
     }
 
     get zipFileName() {
         return `com_${this.nombre}.v${this.version}.zip`;
+    }
+
+    getDefault(property, defaultValue = "") {
+        return property !== undefined ? property : defaultValue;
     }
 
     get siteLanguageFileNames() {
@@ -262,6 +272,41 @@ class Component {
         })
 
         return `releaseComponent${this.cNombre}`;        
+    }
+
+    // Upload Task
+    get uploadTask() {
+        let desde = this.releaseDest + this.zipFileName;
+        let fichero = this.uploadDest + this.zipFileName;
+
+        task(`uploadComponent${this.cNombre}`, async function() {
+            await uploadFile(desde, fichero);
+        })
+
+        return `uploadComponent${this.cNombre}`;
+    }
+
+    // ARS Task
+    get arsTask() {
+        
+        if (this.ars === undefined) {
+            this.ars = {};
+        }
+        
+        // if empty object, create a task that does nothing
+        if (Object.keys(this.ars).length === 0) {
+            task(`arsComponent${this.cNombre}`, async function() {
+                return;
+            });
+        } else {
+            let ars = new ARS(this);
+
+            task(`arsComponent${this.cNombre}`, async function() {
+                await ars.addNewItem();
+            });
+        }
+
+        return `arsComponent${this.cNombre}`;
     }
 }
 

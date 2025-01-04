@@ -8,42 +8,110 @@ class Manifest {
      * @param string ruta
      */
     constructor(ruta, tipo, nombre, grupo = '') {
-        ruta = limpiarRuta(ruta);
         this.ruta = ruta;
+        this.tipo = tipo;
+        this.nombre = nombre;
+        this.grupo = grupo;
+        this.extFileName = this.nombre;
+        this.extFilePath = this.tipo;
+        this.filename = "";
+        this.manifesto = this.filename;
+    }
 
+    /**
+     * @param {string} tipo
+     */
+    set tipo(tipo) {
         if (tipo.toLowerCase() === 'library')
         {
             tipo = 'libraries';
         } else {
             tipo = tipo.charAt(tipo.length - 1) == 's' ? tipo.toLowerCase() : tipo.toLowerCase() + 's';
         }
-        this.tipo = tipo;
 
+        this._tipo = tipo;
+    }
+
+    get tipo() {
+        return this._tipo;
+    }
+
+    set nombre(nombre) {
         nombre = nombre.toLowerCase();
-        this.nombre = nombre;
+        this._nombre = nombre;
+    }
 
-        switch (tipo) {
-            case 'modules':
-                nombre = nombre.substring(0, 4) == 'mod_' ? nombre : 'mod_' + nombre;
-                tipo = grupo.toLowerCase() == 'admin' || grupo.toLowerCase() == 'administrator' ? tipo + '/admin' :  tipo + '/' + grupo.toLowerCase();
-                tipo = tipo + '/' + this.nombre + '/';
-                this.prefijo = 'mod';
-                break;
-            case 'plugins':
-                tipo = tipo + '/' + grupo.toLowerCase() + '/' + nombre + '/';
-                this.prefijo = 'plg';
-                break;
-            case 'components':
-            case 'libraries':
-            case 'files':
-            case 'templates':
-                tipo = tipo + '/' + nombre + '/';
-                break;
+    get nombre() {
+        return this._nombre;
+    }
+
+    set ruta(ruta) {
+        ruta = limpiarRuta(ruta);
+        this._ruta = ruta;
+    }
+
+    get ruta() {
+        return this._ruta;
+    }
+
+    set grupo(grupo) {
+        grupo = grupo.toLowerCase();
+        this._grupo = grupo;
+    }
+
+    get grupo() {
+        return this._grupo;
+    }
+
+    set filename(vacio) {
+        this._filename = this.extFilePath + this.extFileName + '.xml';
+    }
+
+    get filename() {
+        return this._filename;
+    }
+
+    set extFileName(nombre) {
+
+        if (this.tipo == 'templates') {
+            nombre = 'templateDetails';
         }
 
-        this.filename = this.tipo == 'templates' ? ruta + 'templates/' + nombre + '/' + 'templateDetails.xml' : ruta + tipo + nombre + '.xml';
+        if (this.tipo == 'modules') {
+            nombre = nombre.substring(0, 4) == 'mod_' ? nombre : 'mod_' + nombre;
+        }
 
-        let archivoManifiesto = fs.readFileSync(this.filename, 'utf-8');
+        this._extFileName = nombre;
+    }
+
+    get extFileName() {
+        return this._extFileName;
+    }
+
+    set extFilePath(tipo) {
+        let nombre = this.nombre;
+        let filePath = this.ruta + tipo + '/';
+        let grupo = this.grupo;
+
+        if (tipo == 'modules') {
+            grupo = grupo == 'admin' || grupo == 'administrator' ? 'admin' : grupo;
+        }
+
+        if (grupo !== '') {
+            filePath = filePath + grupo + '/';
+        }
+
+        filePath = filePath + nombre + '/';
+
+        this._extFilePath = filePath;
+    }
+
+    get extFilePath() {
+        return this._extFilePath;
+    }
+
+    set manifesto(filename) {
+        let archivoManifiesto = fs.readFileSync(filename, 'utf-8');
 
         xml2js.parseString(archivoManifiesto, (err, result) => {
             if (err) {
@@ -51,42 +119,17 @@ class Manifest {
                 throw err;
             }
 
-            this.manifest = result.extension;
-        })
+            this._manifest = result.extension;
+        });
     }
 
     get manifiesto() {
-        return this.manifest;
+        return this._manifest;
     }
 
     hasMedia() {
-        return this.manifest.media !== undefined;
+        return this.manifesto.media !== undefined;
     }
-
-
-    // set manifest() {
-    //     xml2js.parseString(templateDetails, (err, result) => {
-    //         if (err) {
-    //             console.error(err);
-    //             throw err;
-    //         }
-
-    //         let manifest = result.extension;
-
-    //         let client = manifest.$.client; // cliente site o admin
-    //         let folders = manifest.files[0].folder; // Array de nombres de carpetas de la plantilla
-    //         let files = manifest.files[0].filename; // Array de nombres archivos de la plantilla
-    //         let hasMedia = manifest.media !== undefined; // Comprobar si hay archivos media
-    //         if (hasMedia) {
-    //             var mediaSrc = manifest.media[0].$.destination; // destino de los archivos y carpetas media de la plantilla
-    //             var mediaFiles = manifest.media[0].filename; // Array de nombres de archivos de la carpeta media
-    //             var mediaFolders = manifest.media[0].folder; // Array de nombres de carpetas de media
-    //         }
-    //         let languages = manifest.languages[0] // idiomas
-    //         let languagesFolder = languages.$.folder; // Nombre de la carpeta idiomas en el empaquetado
-    //         let langs = languages.language  // Array con nombre y atributo tag de los ficheros de idioma en formato xx-XX/tpl_plantilla.ini
-    //         // para recuperar el nombre debemos usar langs[n]._
-    // }
 }
 
 module.exports = Manifest;

@@ -1,0 +1,23 @@
+{
+    "extName": "extension_name_without_prefix",
+    "srcDir": "extension_code_source_path",
+    "destDir": "joomla_instalation_path",
+    "releaseDir": "path_to_map_the_releases",
+    "github": {
+        "owner": "maikol-ortigueira",
+        "repo": "github_repo",
+        "token": "ghp_XXXXXXXX"
+    },
+    "sftp": {
+        "host": "sftp_host",
+        "port": 22,
+        "user": "sftp_user",
+        "pass": "XXXXXXXX",
+        "privateKey": "leave_empty_if_not_used_or_remove_this_param",
+        "remotePath": "absolute_remote_path"
+    },
+    "ars": {
+        "host": "akeeba_release_system_host",
+        "token": "joomla_api_akeeba_release_system_token"
+    }
+}

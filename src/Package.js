@@ -1,4 +1,4 @@
-const { hasComponents, getComponentsNames, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames, sourcePath, releasePath, destPath } = require("./utils");
+const { hasComponents, getComponents, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames, sourcePath, releasePath, destPath } = require("./utils");
 const Component = require("./Component");
 const Archivo = require("./Archivo")
 const js2xml = require('js2xmlparser');
@@ -38,7 +38,7 @@ class Package {
         this.destino = destino
 
         if (hasComponents) {
-            let components = getComponentsNames();
+            let components = getComponents();
             
             components.forEach(name => {
                 let comp = new Component(name);

@@ -6,6 +6,8 @@ var cleanTasks = []
     copyTasks = [],
     releaseTasks = [],
     backupTasks = [],
+    uploadTasks = [],
+    arsTasks = [],
     watchTasks = [];
 
 var releasePackage;
@@ -18,6 +20,8 @@ if (utils.hasComponents()) {
     copyTasks.push('copyComponents');
     releaseTasks.push('releaseComponents');
     backupTasks.push('backupComponents');
+    uploadTasks.push('uploadComponents');
+    arsTasks.push('arsComponents');
     watchTasks.push('watchComponents');
 }
 
@@ -85,4 +89,6 @@ exports.copyTasks = copyTasks;
 exports.releaseTasks = releaseTasks;
 exports.backupTasks = backupTasks;
 exports.watchTasks = watchTasks;
+exports.uploadTasks = uploadTasks;
+exports.arsTasks = arsTasks;
 exports.releasePackage = releasePackage;

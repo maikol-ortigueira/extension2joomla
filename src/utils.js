@@ -12,15 +12,7 @@ var fs = require('fs'),
     xmlReader = require('xml-reader');
 const init = require('./init');
 
-    // if (!fs.existsSync(`${sourcePath}/extensions-config.json`)) {
-//     console.error('\x1b[1m\x1b[33m=============================================================================================== ');
-//     console.error("\x1b[37m|\n|   \x1b[31m¡¡Error!!\x1b[37m   Falta el fichero de configuración de la extensión\n|");
-//     console.error("|   Debes crear un fichero con el nombre \"\x1b[32mextensions-config.json\x1b[37m\" en la siguiente carpeta:\n|")
-//     console.error("|   \x1b[32m" + `${sourcePath}/`);
-//     console.error("\x1b[37m|\n|   Puedes copiar, pegar y sustituir los valores del fichero \"extension-config.json.dist\".");
-//     console.error("|   Deberás renombrarlo eliminando la extension \".dist\"\n|");
-//     console.error('\x1b[33m===============================================================================================\x1b[0m');
-// }
+const SFTPClient = require('ssh2-sftp-client');
 
 const hasComponents = () => {
     let hasComponents = extConfig.hasOwnProperty('components') &&
@@ -30,7 +22,7 @@ const hasComponents = () => {
     return hasComponents
 }
 
-const getComponentsNames = () => {
+const getComponents = () => {
     if (hasComponents()) {
         return extConfig.components;
     }
@@ -268,9 +260,62 @@ const getNotEmptyFolderNames = (p) => {
         .map(dirent => dirent.name)
 }
 
+/**
+ * Upload a file to a SFTP server
+ * 
+ * @param {string} localFilePath Full file path to upload
+ * @param {string} fileName Base name of the file
+ */
+const uploadFile = async (localFilePath, fileName) => {
+    const sftp = new SFTPClient();
+    const remoteFilePath = `${global.sftpRemotePath}/${fileName}`;
+
+    console.log('Fichero a subir: ', localFilePath);
+    console.log('Ruta remota: ', remoteFilePath);
+
+    let config = {
+        host: global.sftpHost,
+        port: global.sftpPort,
+        username: global.sftpUser,
+    }
+
+    // Comprobar si se ha configurado privateKey
+    if (global.sftpPrivateKey !== '') {
+        config.privateKey = fs.readFileSync(global.sftpPrivateKey);
+    } else {
+        config.password = global.sftpPass;
+    }
+
+    try {
+        console.log('Conectando al servidor SFTP...');
+        await sftp.connect(config);
+
+        // Obtener la ruta del directorio remoto
+        let remoteDir = path.dirname(remoteFilePath);
+
+        // Verificar si el directorio remoto existe, si no, crearlo
+        console.log('Comprobando si el directorio remoto existe...');
+        let dirExists = await sftp.exists(remoteDir);
+        if (!dirExists) {
+            console.log('Creando directorio remoto...');
+            await sftp.mkdir(remoteDir, true);
+        }
+
+        console.log(`Subiendo fichero ${localFilePath} a ${remoteFilePath}...`);
+        await sftp.put(localFilePath, remoteFilePath);
+
+        console.log('Fichero subido correctamente');
+    } catch (err) {
+        console.error('Error durante la operación SFTP: ', err.message);
+    } finally {
+        console.log('Cerrando conexión SFTP...');
+        await sftp.end();
+    }
+}
+
 module.exports = {
     hasComponents,
-    getComponentsNames,
+    getComponents,
     hasLibraries,
     getLibrariesNames,
     hasFiles,
@@ -292,6 +337,7 @@ module.exports = {
     getFecha,
     getNotEmptyFolderNames,
     resolveHome,
+    uploadFile,
     sourcePath,
     destPath,
     releasePath
