@@ -1,132 +1,16 @@
 const capitalize = require('capitalize');
-const { task, src, series, dest } = require('gulp');
-const gulpClean = require('gulp-clean');
-const gulpForeach = require('gulp-foreach');
-const GulpZip = require('gulp-zip');
-const Manifest = require('./Manifest');
-const { limpiarRuta, getManisfestFiles, getManisfestFolders, sourcePath, destPath, releasePath } = require('./utils')
+const Extension = require('./Extension');
 
-class Archivo {
-    constructor(nombre) {
-        let ruta = limpiarRuta(sourcePath);
-        this.rutaDesde = `${ruta}files/${nombre}/`;
-        this.nombre = nombre.toLowerCase();
-        this.cNombre = capitalize(this.nombre);
-        let manifest = new Manifest(ruta, 'file', nombre);
-        this.manifiesto = manifest.manifiesto;
-        this.version = this.manifiesto.version;
-        this.rutaCompletaDesde = `${ruta}${this.manifiesto.fileset[0].files[0].$.target}/`;
-        let destino = destPath.charAt(destPath.length - 1) == '/' ? destPath : destPath + '/';
-        this.destino = `${destino}files/${this.nombre}/`;
-        if (this.manifiesto.fileset[0].files[0] !== undefined) {
-            this.destinoFicheros = `${this.destino}${this.manifiesto.fileset[0].files[0].$.folder}/`
-        }
+class Archivo extends Extension {
+    constructor(extension) {
+        this.type = 'file';
+        extension.ms = `files`;
+        extension.md = `files`;
+        extension.type = this.type;
+        extension.prefix = '';
+        super(extension);
 
-        this.copyFile = [];
-
-        let destinoRelease = releasePath.charAt(releasePath.length - 1) == '/' ? releasePath : releasePath + '/';
-        this.releaseDest = destinoRelease + 'files/' + this.nombre + '/';
-
-        this.srcPathArrayLong = this.rutaCompletaDesde.replace(/^\/+|\/+$/g, '').split('/').length;
-    }
-
-    get files() {
-        return getManisfestFiles(this.manifiesto.fileset[0].files, this.rutaCompletaDesde);
-    }
-
-    get folders() {
-        return getManisfestFolders(this.manifiesto.fileset[0].files, this.rutaCompletaDesde);
-    }
-
-    // get manifestFile() {
-    //     return `${this.rutaDesde}administrator/manifests/files/${this.nombre}.xml`;
-    // }
-
-    get zipFileName() {
-        return `${this.nombre}.v${this.version}.zip`;
-    }
-
-    get cleanTask() {
-        let destino = this.destino;
-
-        task(`cleanFile${this.cNombre}`, function () {
-            return src(destino, { read: false, allowEmpty: true })
-                .pipe(gulpClean({ force: true }))
-        });
-
-        return `cleanFile${this.cNombre}`;
-    }
-
-    get copyTask() {
-        this.copyFilesTask;
-        this.copyFoldersTask;
-        this.copyManifestTask;
-
-        task(`copyFile${this.cNombre}`, series(...this.copyFile));
-
-        return `copyFile${this.cNombre}`;
-    }
-
-    // release Task
-    get releaseTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.releaseDest;
-        let filename = this.zipFileName;
-
-        task(`releaseFile${this.cNombre}`, function (cb) {
-            return src(desde)
-                .pipe(GulpZip(filename))
-                .pipe(dest(destino))
-        })
-
-        return `releaseFile${this.cNombre}`;
-    }
-
-    get copyFilesTask() {
-        let files = this.files;
-
-        if (files.length > 0) {
-            let destino = this.destinoFicheros;
-            task(`copyFileFiles${this.cNombre}`, function () {
-                return src(files, { allowEmpty: true })
-                    .pipe(dest(destino))
-            });
-
-            this.copyFile.push(`copyFileFiles${this.cNombre}`);
-        }
-    }
-
-    get copyFoldersTask() {
-        let folders = this.folders;
-
-        if (folders.length > 0) {
-            let destino = this.destinoFicheros;
-            let long = this.srcPathArrayLong;
-
-            task(`copyFileFolders${this.cNombre}`, function () {
-                return src(folders, { allowEmpty: true })
-                    .pipe(gulpForeach(function (stream, file) {
-                        let destFolderName = file.path.replace(/^\/+|\/+$/g, '').split('/')[long];
-                        let destinoF = `${destino}${destFolderName}/`;
-                        return stream
-                            .pipe(dest(destinoF))
-                    }))
-            })
-
-            this.copyFile.push(`copyFileFolders${this.cNombre}`);
-        }
-    }
-
-    get copyManifestTask() {
-        let manifest = this.manifestFile;
-        let destino = this.destino;
-
-        task(`copyManifest${this.cNombre}`, function () {
-            return src(manifest, { allowEmpty: true })
-                .pipe(dest(destino))
-        });
-
-        this.copyFile.push(`copyManifest${this.cNombre}`);
+        this.taskName = `File${capitalize(this._name)}`;
     }
 }
 

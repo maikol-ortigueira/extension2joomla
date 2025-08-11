@@ -1,28 +1,24 @@
 const { task, parallel } = require("gulp");
 const Component = require("./Component");
-const { hasComponents, getComponents } = require("./utils");
+const { has, get } = require("./utils");
 
-if (hasComponents) {
-    const components = getComponents();
+if (has('components')) {
+    const components = get('components');
     let cleanComponents = [], 
-        copyComponents = [], 
+        copyComponents = [],
+        copyProComponents = [],
         watchComponents = [],
         releaseComponents = [],
         uploadComponents = [],
         arsComponents = [];
 
     components.forEach(extension => {
-        let componentName = extension;
-        let ars = {};
 
-        if (typeof extension === 'object') {
-            componentName = extension.name;
-            ars = extension.ars;
-        }
-        let component = new Component(componentName, ars);
+        let component = new Component(extension);
 
         cleanComponents.push(component.cleanTask);
         copyComponents.push(component.copyTask);
+        copyProComponents.push(component.copyProTask);
         watchComponents.push(component.watchTask);
         releaseComponents.push(component.releaseTask);
         uploadComponents.push(component.uploadTask);
@@ -31,6 +27,7 @@ if (hasComponents) {
 
     task(`cleanComponents`, parallel(...cleanComponents));
     task(`copyComponents`, parallel(...copyComponents));
+    task(`copyProComponents`, parallel(...copyProComponents));
     task(`watchComponents`, parallel(...watchComponents));
     task(`releaseComponents`, parallel(...releaseComponents));
     task(`uploadComponents`, parallel(...uploadComponents));

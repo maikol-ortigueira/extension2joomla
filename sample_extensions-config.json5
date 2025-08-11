@@ -1,37 +1,216 @@
 {
     "components": [
+        // can define multiple components as needed, each with its own configuration object
         {
+            // The component name
             "name": "foo",
+            // The component version. Only used if the component manifest file is not already defined
+            // The last part of the version is the maturity of the extension. Options are: [aX|bX|rcX|X]
+            // aX is alpha, bX is beta, rcX is release candidate version and X is stable
+            "version": "1.0.b0",
+            // The component configuration
+            // This section is used to create automatically the component manifest file
+            // and track the component folder content inside joomla2extension
+            // If you already hava a manifest file just remove the config param or set useConfig = false and I'll automatically track the component folder content
+            // But remember that this is priority from the manifest file and if set will remove the component manifest file
+            "config": {
+                // If you set useConfig to false will ignore this config object and will use component manifest file to track the component folder content
+                "useConfig": true,
+                // The admin folder content.
+                // If you don't have an admin folder just remove this param, it dosn't look a good idea to have an empty folder but it up to you
+                // If this param is removed won't track the admin folder and won't be added to the manifest file
+                "admin": {
+                    // The admin folder name, I use admin as a standard but you can use any name you want
+                    "folderName": "admin",
+                    // folders to be created inside the admin folder
+                    // we will care about language folder later, dosn't need to be defined here
+                    "folders": ["forms", "layouts", "services", "sql", "src", "tmpl"],
+                    "sql": {"drivers": ["mysql", "sqlsrv", "pgsql"], "charset": "utf8"},
+                    // languages created inside the language folder
+                    // if you don't have any language file just remove this param
+                    "language": {
+                        // The language folder name, I use language as a standard but you can use any name you want
+                        "folderName": "language",
+                        // languages created inside the language folder
+                        // remember to add the sys.ini and the ini language files inside the language folder
+                        "tags": ["en-GB", "es-ES"],
+                        "extensions": ["sys.ini", "ini"]
+                    },
+                    // files added inside the admin folder
+                    // Don't care about manifest file, it will be created automatically and added to the files array
+                    "files": ["config.xml", "access.xml"],
+                    "menus": {
+                        "menu": {
+                            "title": "Foo",
+                            "link": "index.php?option=com_foo",
+                            "img": "foo.png",
+                            "alt": "Foo",
+                            "view": "foo",
+                        },
+                        "submenus": [
+                            {
+                                "title": "Bar",
+                                "link": "index.php?option=com_foo&view=bar",
+                                "img": "bar.png",
+                                "alt": "Bar",
+                                "view": "bar",
+                            }
+                        ],
+                    }
+                },
+                // The API folder content.
+                // If you don't have an api folder just remove this param
+                "api": {
+                    "folderName": "api",
+                    "folders": ["src"],
+                    "files": []
+                },
+                // The site folder content.
+                // If you don't have a site folder just remove this param
+                "site": {
+                    "folderName": "site",
+                    "folders": ["layouts", "src", "tmpl"],
+                    "language": {
+                        "folderName": "language",
+                        "tags": ["en-GB", "es-ES"]
+                    },
+                    "files": [],
+                },
+                // The media folder content.
+                // If you don't have a media folder just remove this param
+                "media": {
+                    "folderName": "media",
+                    "folders": ["images", "js", "css"],
+                    "files": ["joomla.asset.json"],
+                },
+                // If you have a script file to be executed after the installation of the component
+                // just add the script file to the component folder and set the scriptFile param
+                // leave it empty or remove it if you don't have a script file
+                "scriptFile": "script.php",
+                // The update server configuration
+                // @see https://docs.joomla.org/Manifest_files#Update_Servers
+                "update_servers": {
+                    // If you don't have an update server just set the hasUpdateServer to false
+                    "hasUpdateServer": true,
+                    "servers": [
+                        {
+                            // The update server URL
+                            "server": "https://www.example.com/foo/extension.xml",
+                            // The update server type. Options are: [collection|extension]
+                            "type": "extension",
+                            // The update server priority
+                            "priority": 1,
+                            // The name of the update server
+                            "name": "Extension name update server",
+                        },
+                    ],
+                    // The download key configuration
+                    // If you don't have a download key just set the hasDownloadKey to false
+                    // @see https://docs.joomla.org/Manifest_files#Supporting_Download_Keys
+                    "hasDownloadKey": true,
+                    "download_key": {
+                        "prefix": "dlid=",
+                        "suffix": "&amp;dummy=my.zip"
+                    }
+                },  
+                "dashboards": [
+                    {
+                        "title": "COM_EXAMPLE_DASHBOARD_TITLE",
+                        "icon": "icon-lock",
+                        "text": "example"
+                    },
+                ],
+                // The install value. Options are: [install|upgrade]
+                // @see https://docs.joomla.org/Manifest_files#Root_element
+                "method": "upgrade",
+            },
+            // ARS configuration to be used in the Akeeba Release System API
             "ars": {
+                // Category configuration
                 "category": {
                     "title": "Fake ARS Category title",
                     "description": "Category description"
                 },
+                // Item configuration
                 "item": {
                     "title": "ARS Item title",
-                    "type": "ARS item type. Options are: [file|link]",
-                    "link": "if item.type === link must identify this param"
+                    // Item type. Options are: [file|link]
+                    // Must be file if you desided to upload a the extension file to ARS.
+                    // you can upload the file if gulp upload is used
+                    "type": "link",
+                    // Item link in ARS. It is required if item.type === link otherwise you can remove it
+                    // In this case seems like the file is hosted in a remote server
+                    "link": "https://www.example.com/foo/bar.zip"
                 },
-                "maturity": "options [alpha|beta|rc|stable]",
-                "published": "[0|1]",
-                "changelog_path": "if empty will use this path"
-            }
+                // Published configuration
+                // Options are: [0|1] 0 for unpublished and 1 for published
+                "published": "1",
+                // Changelog path configuration. If empty will use the path defined in the root of the extension
+                // Don't worry if no file is found, the script will continue without it and just do add a blank changelog
+                "changelog_path": ""
+            },
+            // The maturity of the extension depends on the own extension version in the manifest file
+            // 1.0.a0 is alpha, 1.0.b0 is beta, 1.0.rc0 is release candidate version and 1.0.0 is stable
         }
     ],
+    // Plugins configuration
     "plugins": {
+        // Needed to assign the plugin to a specific group
+        // Inside each group you can define multiple plugins as needed the same way as components
+        // each group must be an array of objects
         "system": [],
         "content": []
     },
+    // Modules configuration
+
     "modules": {
-        "site": [],
+        // Inside each client you can define multiple modules as needed the same way as components
+        // each client must be an array of objects
+        "site": [
+            // can define multiple modules as needed, each with its own configuration object
+            {
+                // The module name
+                // In this case the module name must be prefixed with "mod_" as it is the Joomla standard
+                "name": "com_foo",
+                // ARS configuration to be used in the Akeeba Release System API
+                "ars": {
+                    // Category configuration
+                    "category": {
+                        "title": "Fake ARS Category title",
+                        "description": "Category description"
+                    },
+                    // Item configuration
+                    "item": {
+                        "title": "ARS Item title",
+                        "type": "ARS item type. Options are: [file|link]",
+                        "link": "if item.type === link must identify this param"
+                    },
+                    // Published configuration
+                    "published": "[0|1]",
+                    // Changelog path configuration. If empty will use the path defined in the root of the extension
+                    // Don't worry if no file is found, the script will continue without it and just do add a blank changelog
+                    "changelog_path": "if empty will use this path"
+                }
+            }
+        ],
         "admin": []
     },
+    // Templates configuration
     "templates": {
+        // Inside each client you can define multiple templates as needed the same way as components
+        // each client must be an array of objects
         "site": [],
         "admin": []
     },
-    "libraries": [""],
+    // Libraries configuration
+    // can define multiple libraries as needed, each with its own configuration object like components
+    "libraries": [],
+    // Files configuration
+    // can define multiple files as needed, each with its own configuration object like components
     "files": [],
+    // Package configuration
+    // Can only have one package configuration object and if defined will be used to create the package of the extension
+    // wich will include all the files, libraries, components, modules, plugins and templates defined in this configuration
     "package": {
         "name": "",
         "packagename": "",

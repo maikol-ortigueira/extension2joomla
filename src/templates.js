@@ -1,28 +1,38 @@
 const Template = require("./Template");
-const { getTemplates } = require("./utils");
+const { has, get } = require("./utils");
 const { task, parallel } = require("gulp");
 
-if (getTemplates !== false) {
-    const templates = getTemplates();
+if (has('templates')) {
+    const templates = get('templates');
     let cleanTemplates = [],
         copyTemplates = [],
+        copyProTemplates = [],
         watchTemplates = [],
-        backupTemplates = [],
-        releaseTemplates = [];
+        releaseTemplates = [],
+        uploadTemplates = [],
+        arsTemplates = [];
 
-    templates.forEach(name => {
-        let temp = new Template(name)
+    for (let client in templates) {
+        templates[client].forEach(extension => {
+            extension.client = client;
 
-        cleanTemplates.push(temp.cleanTask)
-        copyTemplates.push(temp.copyTask)
-        watchTemplates.push(temp.watchTask)
-        backupTemplates.push(temp.backupTask)
-        releaseTemplates.push(temp.releaseTask)
-    })
+            let temp = new Template(extension)
+
+            cleanTemplates.push(temp.cleanTask)
+            copyTemplates.push(temp.copyTask)
+            copyProTemplates.push(temp.copyProTask)
+            watchTemplates.push(temp.watchTask)
+            releaseTemplates.push(temp.releaseTask)
+            uploadTemplates.push(temp.uploadTask)
+            arsTemplates.push(temp.arsTask)
+        })
+    }
 
     task(`cleanTemplates`, parallel(...cleanTemplates));
     task(`copyTemplates`, parallel(...copyTemplates));
+    task(`copyProTemplates`, parallel(...copyProTemplates));
     task(`watchTemplates`, parallel(...watchTemplates));
-    task(`backupTemplates`, parallel(...backupTemplates));
     task(`releaseTemplates`, parallel(...releaseTemplates));
+    task(`uploadTemplates`, parallel(...uploadTemplates));
+    task(`arsTemplates`, parallel(...arsTemplates));
 }

@@ -1,264 +1,163 @@
-const { hasComponents, getComponents, hasFiles, getFilesNames, hasPlugins, getPlugins, hasTemplates, getTemplates, limpiarRuta, hasModules, getModules, getPackageName, getDefault, getFecha, hasLibraries, getLibrariesNames, sourcePath, releasePath, destPath } = require("./utils");
+const { has, get } = require("./utils");
+
 const Component = require("./Component");
 const Archivo = require("./Archivo")
-const js2xml = require('js2xmlparser');
 const Plugin = require('./Plugin');
 const Template = require("./Template");
-const {  writeFileSync } = require("fs");
-const { task, src, series, dest } = require("gulp");
-const gulpClean = require("gulp-clean");
-const GulpZip = require("gulp-zip");
 const Modulo = require("./Modulo");
 const Library = require("./Library");
 
+const Extension = require("./Extension");
+const { ManifestCreator } = require("./Manifest");
+const path = require("path");
+const os = require("os");
+const ADMZip = require("adm-zip");
+const fs = require("fs-extra");
 
-class Package {
+class Package extends Extension {
+    hasPro = false;
 
     constructor() {
-        this.package = getPackageName();
-        this.nombre = this.package.name.toLowerCase();
-        this.extensionVersion = '4.0';
-        this.name = `PKG_${this.nombre.toUpperCase()}`
-        this.author = getDefault(this.package.author, 'Maikol Fustes')
-        let fechaHoy = getFecha();
-        let mesAnoHoy = `${fechaHoy.mes} ${fechaHoy.ano}`
-        this.creationDate = getDefault(this.package.creationDate, mesAnoHoy);
-        this.packagename = getDefault(this.package.packagename, this.package.name)
-        this.version = getDefault(this.package.version, '1.0.0')
-        this.description = `PKG_${this.nombre.toUpperCase()}_DESC`;
-        this.files = [];
-        this.zipFiles = [];
-        this.copyPackage = [];
-        let ruta = limpiarRuta(sourcePath);
+        let extension = get('package');
+        extension.ms = `packages`;
+        extension.md = `packages`;
+        extension.type = 'package';
+        extension.prefix = 'pkg_';
+        extension.config = { useConfig: true };
+        super(extension);
 
-        let destinoRelease = releasePath.charAt(releasePath.length - 1) == '/' ? releasePath : releasePath + '/';
-        this.releaseDest = destinoRelease + 'packages/' + this.nombre + '/';
-
-        let destino = destPath.charAt(destPath.length - 1) == '/' ? destPath : destPath + '/';
-        this.destino = destino
-
-        if (hasComponents) {
-            let components = getComponents();
-            
-            components.forEach(name => {
-                let comp = new Component(name);
-                this.zipFiles.push(`${comp.releaseDest}${comp.zipFileName}`)
-                this.files.push(this.parseElementFile('component', `com_${name}`, comp.zipFileName));
-            })
-        }
-
-        if (hasFiles) {
-            let archivos = getFilesNames();
-
-             archivos.forEach(name => {
-                 let f = new Archivo(name);
-                 this.zipFiles.push(`${f.releaseDest}${f.zipFileName}`);
-                 this.files.push(this.parseElementFile('file', name, f.zipFileName));
-             })
-        }
-
-        if (hasTemplates) {
-            let templates = getTemplates();
-
-                if (templates.length > 0) {
-                    templates.forEach(name => {
-                        let template = new Template(name)
-                        this.zipFiles.push(`${template.releaseDest}${template.zipFileName}`)
-                        this.files.push(this.parseElementFile('template', `tmpl_${name}`, template.zipFileName))
-                    })
-                }
-
-        }
-
-        if (hasLibraries()) {
-            let libraries = getLibrariesNames();
-
-            libraries.forEach(name => {
-                let lib = new Library(name);
-                this.zipFiles.push(`${lib.releaseDest}${lib.zipFileName}`)
-                this.files.push(this.parseElementFile('library', `lib_${name}`, lib.zipFileName))
-            })
-        } 
-
-        if (hasPlugins) {
-            let groups = getPlugins();
-
-            for (const type in groups) {
-                let plugins = groups[type];
-                if (plugins.length > 0) {
-                    plugins.forEach(name => {
-                        let p = new Plugin(name, type);
-                        this.zipFiles.push(`${p.releaseDest}${p.zipFileName}`);
-                        this.files.push(this.parsePluginElementFile(name, p.zipFileName, type))
-                    })
-                }
-            }
-        }
-
-        if (hasModules) {
-            let clients = getModules()
-
-            for (const client in clients) {
-                let modules = clients[client]
-                if (modules.length > 0) {
-                    modules.forEach(name => {
-                        let m = new Modulo(name, client)
-                        this.zipFiles.push(`${m.releaseDest}${m.zipFileName}`)
-                        this.files.push(this.parseModuleElementFile(name, m.zipFileName, client))
-                    })
-                }
-            }
-        }
+        this.description = `${extension.config.name}_XML_DESCRIPTION`;
+        this.language = extension.language;
+        this.language.folderName = 'language';
+        this.language.extensions = ['sys.ini'];
+        this.scriptFile = extension.scriptFile;
+        this.update_servers = extension.update_servers;
+        this.extensions = [];
     }
 
-    parseElementFile (type, id, content) {
-        let element = {
-            "@": {
-                type: type,
-                id: id
-            },
-            "#": content
-        }
-
-        return element;
+    set extensions(arr) {
+        arr = [
+            ...this.get('components'),
+            ...this.get('plugins'),
+            ...this.get('templates'),
+            ...this.get('modules'),
+            ...this.get('libraries'),
+        ];
+        this._extensions = arr;
     }
 
-    parsePluginElementFile (id, content, group) {
-        let element = {
-            "@": {
-                type: 'plugin',
-                id: id,
-                group: group
-            },
-            "#": content
-        }
-
-        return element;
+    get extensions() {
+        return this._extensions;
     }
 
-    parseModuleElementFile (id, content, client) {
-        return this.parseClientElementFile(id, content, client, 'module');
-    }
-
-    parseTemplateElementFile (id, content) {
-        return this.parseClientElementFile(id, content, client, 'template');
-    }
-
-    parseClientElementFile (id, content, client, type) {
-        let element = {
-            "@": {
-                type: type,
-                id: id,
-                client: client
-            },
-            "#": content
-        }
-
-        return element;
-    }
-
-    get manifestFileName () {
+    get manifestFileName() {
         return `pkg_${this.nombre}.xml`;
     }
 
-    get zipFileName() {
-        return `pkg_${this.nombre}.v${this.version}.zip`;
+    releasePackage() {
+        let zip = new ADMZip();
+        let destPath = path.join(this._config.dest.release, this.zipFileName);
+        let tempDir = path.join(os.tmpdir(), 'tempPackageZipFiles');
+
+        this.copyManifestFile();
+
+        // clean temp dir
+        if (fs.existsSync(tempDir)) {
+            fs.removeSync(tempDir);
+        }
+
+        fs.mkdirSync(tempDir, { recursive: true });
+        // Copy src path to temp path
+        fs.copySync(this._config.src, tempDir);
+
+        // copy extensions zip files to temp path
+        this.extensions.forEach(extension => {
+            let src = path.join(extension.zip.src.release, extension.content);
+            let dest = path.join(tempDir, extension.content);
+            fs.copySync(src, dest);
+        });
+
+        zip.addLocalFolder(tempDir);
+        zip.writeZip(destPath);
     }
 
-    get xml() {
-        let xml = {
-            "@": {
-                type: "package",
-                version: this.extensionVersion,
-                method: "upgrade"
-            },
-            name: this.name,
-            author: this.author,
-            creationDate: this.creationDate,
-            packagename: this.packagename,
-            version: this.version,
-            description: this.description,
-            files: {
-                "@": {
-                    folder: "packages"
-                }, 
-                file: [
-                    this.files
-                ]
+    copyManifestFile() {
+        let manifest = new ManifestCreator(this);
+        manifest.set('name', `pkg_${this.name}`.toUpperCase());
+        manifest.set('description', this.description);
+
+        let extensions = this.extensions;
+        let files = []
+        if (extensions.length > 0) {
+            extensions.forEach(extension => {
+                let obj = {};
+                obj.content = extension.content;
+                obj.attributes = extension.attributes;
+                files.push(obj);
+            });
+            manifest.addFiles('files', null, [], files);
+        }
+        manifest.createManifestFile();
+    }
+
+    get(type) {
+        if (!has(type)) return [];
+        let extensions = get(type);
+        let arr = [];
+        const extensionClasses = {
+            components: Component,
+            plugins: Plugin,
+            templates: Template,
+            modules: Modulo,
+            libraries: Library,
+            files: Archivo
+        };
+
+        if (Array.isArray(extensions)) {
+            extensions.forEach(element => {
+                let extension = new extensionClasses[type](element);
+                let obj = this.getExtensionObject(extension);
+                arr.push(obj);
+            });
+        } else {
+            for (let key in extensions) {
+                extensions[key].forEach(element => {
+                    let extension = new extensionClasses[type](element);
+                    let obj = this.getExtensionObject(extension);
+                    arr.push(obj);
+                });
             }
         }
-        return js2xml.parse("extension", xml)
+
+        return arr;
     }
 
-    // makeManifestFile() {
-    //     let filename = `${this.destino}${this.manifestFileName}`
-    //     if (!existsSync(this.destino)) {
-    //         mkdirSync(this.destino);
-    //     }
-    //     writeFileSync(filename, this.xml);
-    // }
-
-    // gulp tasks
-    get cleanTask() {
-        let destino = this.destino;
-
-        task(`cleanPackage`, function() {
-            return src(destino, { read: false, allowEmpty: true })
-            .pipe(gulpClean({ force: true }))
-        })
-
-        return `cleanPackage`;
-    }
-
-    get copyTask() {
-        this.copyZipFilesTask;
-        this.copyManifestFile;
-
-        task(`copyPackage`, series(...this.copyPackage));
-
-        return `copyPackage`;
-    }
-
-    get copyZipFilesTask() {
-        let files = this.zipFiles;
-
-        if (files.length > 0) {
-            let destino = this.destino + 'packages/';
-            
-            task(`copyZipFiles`,  function() {
-                return src(files, { allowEmpty: true })
-                .pipe(dest(destino))
-            })
-            
-            this.copyPackage.push(`copyZipFiles`);
+    getExtensionObject(extension) {
+        let obj = {
+            content: '',
+            attributes: {},
+            zip: {},
+            pro: { hasPro: false }
+        };
+        obj.zip.src = extension._config.dest;
+        obj.content = extension.zipFileName;
+        obj.attributes.id = extension.type === 'plugin' ? extension.name : extension.prefixedName;
+        obj.attributes.type = extension.type;
+        if (extension.group) {
+            obj.attributes.group = extension.group;
         }
-    }
+        if (extension.client) {
+            obj.attributes.client = extension.client;
+        }
+        obj.pro.hasPro = extension.pro !== null;
+        obj.pro.content = extension.proZipFileName;
+        obj.pro.attributes = obj.attributes;
 
-    get copyManifestFile() {
-        let manifestFileName = `../${this.manifestFileName}`;
-        writeFileSync(manifestFileName, this.xml)
-        let destino = this.destino;
+        if (obj.pro.hasPro) {
+            this.hasPro = true;
+        }
 
-        task(`copyPackageManifest`, function() {
-            return src(manifestFileName)
-            .pipe(dest(destino))
-        })
-
-        this.copyPackage.push(`copyPackageManifest`);
-    }
-
-    get releaseTask() {
-        let desde = this.destino + '/**';
-        let destino = this.releaseDest;
-        let filename = this.zipFileName;
-
-        task(`releasePackage`, function () {
-            return src(desde)
-            .pipe(GulpZip(filename))
-            .pipe(dest(destino))
-        })
-
-        return `releasePackage`;
+        return obj;
     }
 }
 

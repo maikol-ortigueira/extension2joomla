@@ -1,28 +1,34 @@
 const { task, parallel } = require("gulp");
 const Library = require("./Library");
-const { hasLibraries, getLibrariesNames } = require("./utils");
+const { has, get } = require("./utils");
 
-if (hasLibraries) {
-    const libraries = getLibrariesNames();
+if (has('libraries')) {
+    const libraries = get('libraries');
     let cleanLibraries = [], 
-        copyLibraries = [], 
+        copyLibraries = [],
+        copyProLibraries = [],
         watchLibraries = [],
-        backupLibraries = [],
-        releaseLibraries = [];
+        releaseLibraries = [],
+        uploadLibraries = [],
+        arsLibraries = [];
 
-    libraries.forEach(name => {
-        let library = new Library(name);
+    libraries.forEach(extension => {
+        let library = new Library(extension);
 
         cleanLibraries.push(library.cleanTask);
         copyLibraries.push(library.copyTask);
+        copyProLibraries.push(library.copyProTask);
         watchLibraries.push(library.watchTask);
-        backupLibraries.push(library.backupTask);
         releaseLibraries.push(library.releaseTask);
+        uploadLibraries.push(library.uploadTask);
+        arsLibraries.push(library.arsTask);
     });
 
     task(`cleanLibraries`, parallel(...cleanLibraries));
     task(`copyLibraries`, parallel(...copyLibraries));
+    task(`copyProLibraries`, parallel(...copyProLibraries));
     task(`watchLibraries`, parallel(...watchLibraries));
-    task(`backupLibraries`, parallel(...backupLibraries));
     task(`releaseLibraries`, parallel(...releaseLibraries));
+    task(`uploadLibraries`, parallel(...uploadLibraries));
+    task(`arsLibraries`, parallel(...arsLibraries));
 }

@@ -1,7 +1,6 @@
 let destDir = '';
 let srcDir = '';
 let releaseDir = '';
-let extName = '';
 let extConfig = '';
 const configFileName = 'config';
 const extConfigFileName = 'extensions-config';
@@ -37,24 +36,27 @@ function checkConfigJsonFile() {
 function setConfigVars() {
     let mainExtConf = parseJsonFile(mainConfigJsonFile, configFileName);
     let extConf = mainExtConf;
-    let filePath = mainExtConf.srcDir;
+    let filePath = resolveHome(mainExtConf.srcDir);
+    srcDir = filePath;
+
+    // check if extension has a config file
     let jsonFileName = getJsonFileName(filePath, configFileName);
 
     if (jsonFileName !== false) {
         extConf = parseJsonFile(filePath, configFileName);
     }
 
-    filePath = resolveHome(`${mainExtConf.srcDir}/${mainExtConf.extName}`);
-    jsonFileName = getJsonFileName(filePath, configFileName);
-
-    if (jsonFileName !== false) {
-        extConf = parseJsonFile(filePath, configFileName);
-    }
-
     destDir = resolveHome(getConfigVar('destDir', mainExtConf, extConf));
-    srcDir = resolveHome(getConfigVar('srcDir', mainExtConf, extConf));
     releaseDir = resolveHome(getConfigVar('releaseDir', mainExtConf, extConf));
-    extName = getConfigVar('extName', mainExtConf, extConf);
+
+    // manifest Vars
+    global.manifest = {};
+    global.manifest.author = getConfigVar('manifest.author', mainExtConf, extConf);
+    global.manifest.copyright = getConfigVar('manifest.copyright', mainExtConf, extConf);
+    global.manifest.license = getConfigVar('manifest.license', mainExtConf, extConf);
+    global.manifest.authorEmail = getConfigVar('manifest.authorEmail', mainExtConf, extConf);
+    global.manifest.authorUrl = getConfigVar('manifest.authorUrl', mainExtConf, extConf);
+    global.manifest.namespaceVendor = getConfigVar('manifest.namespaceVendor', mainExtConf, extConf);
 
     // GitHub Vars
     global.gitUser = getConfigVar('github.owner', mainExtConf, extConf);
@@ -90,7 +92,68 @@ function checkExtensionConfigJsonFile(srcPath) {
         log.show();
         process.exit(1);
     }
-    extConfig = parseJsonFile(srcPath, extConfigFileName);
+    extConfig = changeToLastVersion(parseJsonFile(srcPath, extConfigFileName));
+
+    // set extConfig pro-config if not exists
+    if (!extConfig.hasOwnProperty('pro-config')) {
+        extConfig['pro-config'] = {
+            core_suffix: "core",
+            pro_suffix: "pro",
+            pro_files_suffix: "-pro",
+        };
+    }
+}
+
+function changeToLastVersion(extConfigData) {
+    for (let extension in extConfigData) {
+        switch (extension) {
+            case 'components':
+            case 'libraries':
+            case 'files':
+                extConfigData = newJsonVersionExtArray(extConfigData, extension);
+                break;
+            case 'plugins':
+            case 'templates':
+            case 'modules':
+                for (let group in extConfigData[extension]) {
+                    extConfigData[extension] = newJsonVersionExtArray(extConfigData[extension], group);
+                }
+                break;
+            case 'package':
+                if (!extConfigData[extension].hasOwnProperty('name')) {
+                    extConfigData[extension].pack_extensions = false;
+                    extConfigData[extension].name = '';
+                } else {
+                    if (extConfigData[extension].pack_extensions === undefined)
+                        extConfigData[extension].pack_extensions = extConfigData[extension].name !== '';
+                }
+                break;
+        }
+    }
+
+    return extConfigData;
+}
+
+function newJsonVersionExtArray(data, extension) {
+    if (data.hasOwnProperty(extension)) {
+        let extData = data[extension];
+        let newExtData = [];
+        extData.forEach(ext => {
+            if (typeof ext !== "string") {
+                newExtData.push(ext);
+            } else {
+                let newExt = {
+                    name: ext,
+                    config : null,
+                    ars: null,
+                };
+                newExtData.push(newExt);
+            }
+        });
+        data[extension] = newExtData;
+    }
+
+    return data;
 }
 
 function getJsonFileName(filepath, filename) {
@@ -177,6 +240,10 @@ function hasFile(filePath, fileName) {
 }
 
 function resolveHome(filePath) {
+    if (!filePath.endsWith('/')) {
+        filePath = `${filePath}/`;
+    }
+
     return filePath.replace('~', os.homedir());
 }
 
@@ -185,8 +252,8 @@ function initVars() {
     global.destPath = destDir;
     global.sourcePath = srcDir;
     global.releasePath = releaseDir;
-    global.extName = extName;
     global.extConfig = extConfig;
+    global.proConfig = extConfig['pro-config'];
 }
 
 initVars();

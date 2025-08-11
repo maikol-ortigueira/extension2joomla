@@ -1,13 +1,32 @@
 {
-    "extName": "extension_name_without_prefix",
+    // Your extension(s) code source path e.g. ~/projects/mi_extension
+    // It is mandatory to have a config.json5 file in this path with almost the srcDir param
     "srcDir": "extension_code_source_path",
+    // Next params can be filled even in this file or in the srcDir/config.json5 file
+    // srcDir/config.json5 file has priority over this file
+
+    // Your Joomla instalation path e.g. /var/www/html/joomla
     "destDir": "joomla_instalation_path",
+    // Your releases path e.g. ~/releases
     "releaseDir": "path_to_map_the_releases",
+    // manifest data to be used in the extension in case has to be created
+    // if you remove any of these params, will not be added to the manifest file
+    "manifest": {
+        "author": "author_name",
+        "authorEmail": "author_email",
+        "authorUrl": "https://author_url",
+        "license": "license_type",
+        "copyright": "manifest_copyright",
+        // namespace name to be used in the manifest file
+        // e.g. acme in component manifest file becomes <namespace path="src">Acme\Component\MyComponent</namespace>
+        "namespaceVendor": "company_name",
+    },
     "github": {
         "owner": "maikol-ortigueira",
         "repo": "github_repo",
         "token": "ghp_XXXXXXXX"
     },
+    // if you decided to upload the extension to a remote server, fill the sftp object
     "sftp": {
         "host": "sftp_host",
         "port": 22,
@@ -16,6 +35,7 @@
         "privateKey": "leave_empty_if_not_used_or_remove_this_param",
         "remotePath": "absolute_remote_path"
     },
+    // if you are using Akeeba Release System, fill the ars object
     "ars": {
         "host": "akeeba_release_system_host",
         "token": "joomla_api_akeeba_release_system_token"

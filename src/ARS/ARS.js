@@ -106,11 +106,11 @@ class ARS {
             maturity: this.getMaturity(data.version.toString()),
             item: ars.item,
             filename: data.zipFileName,
-            title: data.nombre,
+            title: data.name,
             version: this.cleanVersion(data.version),
-            directory: global.sftpRemotePath + '/' + data.uploadDest,
+            directory: global.sftpRemotePath + '/' + data.dest.upload,
             published: ars.published,
-            changelog_path: ars.changelog_path == undefined || ars.changelog_path == "" ? data.rutaDesde : ars.changelog_path
+            changelog_path: ars.changelog_path == undefined || ars.changelog_path == "" ? data.src : ars.changelog_path
         };
 
         this._data = parsedData;

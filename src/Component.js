@@ -1,77 +1,60 @@
-const capitalize = require('capitalize');
-const Manifest = require('./Manifest');
-const { limpiarRuta, getNotEmptyFolderNames, sourcePath, destPath, releasePath, uploadFile } = require("./utils");
-const { task, src, dest, series, watch } = require('gulp');
-const clean = require('gulp-clean');
-const GulpZip = require('gulp-zip');
+const Extension = require('./Extension');
+const { checkUndefinedLanguages, uploadFile, releaseExtension, addCleanTask, addCopyTask, addCopyProTask, addWatchTaskSeries } = require("./utils");
+const { task, series, watch } = require('gulp');
 const ARS = require('./ARS/ARS');
-const fs = require('fs');
+const capitalize = require('capitalize');
 
-class Component {
-    constructor(nombre, ars) {
-        this.cleanComponent = [];
-        this.copyComponent = [];
-        this.ars = ars;
+class Component extends Extension {
+    constructor(extension) {
+        // extension main source. If has group, ${group}/extType
+        extension.ms = 'components';
+        // extension main destination. If has group, ${group}/extType
+        extension.md = 'components';
+        extension.prefix = 'com_';
+        extension.type = 'component';
+        super(extension);
+        this.type = 'component';
 
-        let ruta = limpiarRuta(sourcePath)
+        this.taskName = `Component${capitalize(this._name)}`;
+   }
 
-        nombre = nombre.toLowerCase();
+    addSourcePaths(config) {
+        config = super.addSourcePaths(config);
 
-        let manifest = new Manifest(ruta, 'component', nombre);
-        this.manifiesto = manifest.manifiesto;
-        this.version = this.manifiesto.version;
+        // admin source paths
+        config.admin.src = `${this.mainSource}${config.admin.folderName}/`;
+        config.admin.language = checkUndefinedLanguages(config.admin.language, config.admin.src);
+        if (config.admin.language !== null) {
+            config.admin.language.src = `${this.mainSource}${config.admin.folderName}/${config.admin.language.folderName}/`;
+        }
 
-        let site = this.manifiesto.files[0].$.folder !== undefined ? this.manifiesto.files[0].$.folder : 'site';
-        let admin = this.manifiesto.administration[0].files[0].$.folder !== undefined ? this.manifiesto.administration[0].files[0].$.folder : 'admin';
+        // Add release admin folder
+        config.release.folders.push(config.admin.src);
 
-        this.rutaDesde = `${ruta}components/${nombre}/`;
-        this.rutaSiteDesde = `${this.rutaDesde}${site}/`
-        this.rutaAdminDesde = `${this.rutaDesde}${admin}/`
-        this.nombre = nombre;
-        this.cNombre = capitalize(nombre);
+        // site source paths
+        config.site.src = `${this.mainSource}${config.site.folderName}/`;
+        config.site.language = checkUndefinedLanguages(config.site.language, config.site.src);
+        if (config.site.language !== null) {
+            config.site.language.src = `${this.mainSource}${config.site.folderName}/${config.site.language.folderName}/`;
+        }
+        // Add release site folder
+        config.release.folders.push(config.site.src);
 
-
-        var rutaJoomla = limpiarRuta(destPath);
-        this.rutaJoomlaComSite = `${rutaJoomla}components/com_${this.nombre}/`;
-        this.rutaJoomlaComMedia = `${rutaJoomla}media/com_${this.nombre}/`;
-        this.rutaJoomlaComAdmin = `${rutaJoomla}administrator/components/com_${this.nombre}/`;
-        this.rutaJoomlaLanguageSite = `${rutaJoomla}language/`;
-        this.rutaJoomlaLanguageAdmin = `${rutaJoomla}administrator/language/`;
-
-        let destinoRelease = limpiarRuta(releasePath);
-        this.releaseDest = destinoRelease + 'components/' + this.nombre + '/';
-        this.uploadDest = 'components/' + this.nombre + '/';
+        return config;
     }
 
-    get zipFileName() {
-        return `com_${this.nombre}.v${this.version}.zip`;
-    }
+    addDestinyPaths(config) {
+        config = super.addDestinyPaths(config);
+        
+        // admin destiny paths
+        config.admin.dest = `${this.dPath}administrator/components/${this.prefixedName}/`;
+        config.admin.language.dest = config.admin.language.folderName !== undefined ? `${this.dPath}administrator/language/` : null;
 
-    getDefault(property, defaultValue = "") {
-        return property !== undefined ? property : defaultValue;
-    }
+        // site destiny paths
+        config.site.dest = config.site.folderName !== undefined ? `${this.dPath}components/${this.prefixedName}/` : null;
+        config.site.language.dest = config.site.language.folderName !== undefined ? `${this.dPath}language/` : null;
 
-    get siteLanguageFileNames() {
-        let languages = getNotEmptyFolderNames(`${this.rutaSiteDesde}language/`)
-        if (languages === false)
-            return false
-        let langFiles = []
-        languages.forEach(l => {
-            langFiles.push(`${l}/com_${this.nombre}.ini`)
-        })
-
-        return langFiles;
-    }
-
-    get adminLanguageFileNames() {
-        let languages = getNotEmptyFolderNames(`${this.rutaAdminDesde}language/`)
-        let langFiles = [];
-        languages.forEach(l => {
-            langFiles.push(`${l}/com_${this.nombre}.ini`);    
-            langFiles.push(`${l}/com_${this.nombre}.sys.ini`);    
-        })
-
-        return langFiles;
+        return config;
     }
 
     // clean Task
@@ -82,6 +65,8 @@ class Component {
         this.cleanSiteLanguageTask;
         // clean Media Files
         this.cleanMediaFilesTask;
+        // clean Api Files
+        this.cleanApiFilesTask;
         // clean Admin Files
         this.cleanAdminFilesTask;
         // clean Admin Language
@@ -89,74 +74,65 @@ class Component {
         // clean Manifest File
         this.cleanManifestFileTask;
 
-        task(`cleanComponent${this.cNombre}`, series(...this.cleanComponent))
+        task(`clean${this.taskName}`, series(...this.cleanExtensionTasks))
 
-        return `cleanComponent${this.cNombre}`;
+        return `clean${this.taskName}`;
     }
 
     get cleanSiteFilesTask() {
-        let cleanPath = this.rutaJoomlaComSite;
-        task(`cleanComponent${this.cNombre}Site`, () =>{
-            return src(cleanPath, { read:false, allowEmpty:true })
-                .pipe(clean({ force:true }))
-        })
+        if (this.config.site.folderName === null) {
+            return;
+        }
 
-        this.cleanComponent.push(`cleanComponent${this.cNombre}Site`)
+        addCleanTask(this.config.site.dest, `${this.taskName}Site`, this.cleanExtensionTasks);
     }
 
     get cleanSiteLanguageTask() {
-        let siteLanguages = this.siteLanguageFileNames
+        if (this.config.site.language === null) {
+            return;
+        }
+
+        let siteLanguages = this.getLanguageFileNames('site');
         if (siteLanguages === false)
             return
-        let origen = siteLanguages.map(l => `${this.rutaJoomlaLanguageSite}${l}`);
-        task(`cleanComponent${this.cNombre}SiteLanguage`, () => {
-            return src(origen, { read:false, allowEmpty:true })
-            .pipe(clean({ force:true }))
-        })
-
-        this.cleanComponent.push(`cleanComponent${this.cNombre}SiteLanguage`);
+        let origen = siteLanguages.map(l => `${this.config.site.language.dest}${l}`);
+        addCleanTask(origen, `${this.taskName}SiteLanguage`, this.cleanExtensionTasks);
     }
 
     get cleanMediaFilesTask() {
-        let cleanPath = this.rutaJoomlaComMedia;
-        task(`cleanComponent${this.cNombre}Media`, () =>{
-            return src(cleanPath, { read:false, allowEmpty:true })
-                .pipe(clean({ force:true }))
-        })
+        if (this.config.media.dest === null) {
+            return;
+        }
 
-        this.cleanComponent.push(`cleanComponent${this.cNombre}Media`)
+        addCleanTask(this.config.media.dest, `${this.taskName}Media`, this.cleanExtensionTasks);
+    }
+
+    get cleanApiFilesTask() {
+        if (this.config.api.dest === null) {
+            return;
+        }
+
+        addCleanTask(this.config.api.dest, `${this.taskName}Api`, this.cleanExtensionTasks);
     }
 
     get cleanAdminFilesTask() {
-        let origen = this.rutaJoomlaComAdmin;
-        task(`cleanComponent${this.cNombre}Admin`, () => {
-            return src(origen, { read:false, allowEmpty:true })
-            .pipe(clean({ force:true }))
-        })
-
-        this.cleanComponent.push(`cleanComponent${this.cNombre}Admin`);
+        addCleanTask(this.config.admin.dest, `${this.taskName}Admin`, this.cleanExtensionTasks, [this.manifestFileName]);
     }
 
     get cleanAdminLanguageTask() {
-        let origen = this.adminLanguageFileNames.map(l => `${this.rutaJoomlaLanguageAdmin}${l}`);
+        if (this.config.admin.language === null) {
+            return;
+        }
+        let origen = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.dest}${l}`);
 
-        task(`cleanComponent${this.cNombre}AdminLanguage`, () => {
-            return src(origen, { read:false, allowEmpty:true })
-            .pipe(clean({ force:true }))
-        })
-
-        this.cleanComponent.push(`cleanComponent${this.cNombre}AdminLanguage`);
+        addCleanTask(origen, `${this.taskName}AdminLanguage`, this.cleanExtensionTasks);
     }
 
     get cleanManifestFileTask() {
-        let origen = `${this.rutaJoomlaComAdmin}${this.nombre}.xml`
-
-        task(`cleanComponent${this.cNombre}Manifest`, () => {
-            return src(origen, { read:false, allowEmpty:true })
-            .pipe(clean({ force:true }))
-        })
-
-        this.cleanComponent.push(`cleanComponent${this.cNombre}Manifest`);
+        if (this.config.useConfig === true) {
+            return;
+        }
+        addCleanTask(`${this.config.admin.dest}${this.manifestFileName}`, `${this.taskName}Manifest`, this.cleanExtensionTasks);
     }
 
     // copy Task
@@ -164,149 +140,181 @@ class Component {
         this.copySiteFilesTask;
         this.copySiteLanguagesTask;
         this.copyMediaFilesTask;
+        this.copyApiFilesTask;
         this.copyAdminFilesTask;
         this.copyAdminLanguagesTask;
         this.copyManifestFile;
 
-        task(`copyComponent${this.cNombre}`, series(...this.copyComponent));
+        task(`copy${this.taskName}`, series(...this.copyExtensionTasks));
 
-        return `copyComponent${this.cNombre}`;
+        return `copy${this.taskName}`;
     }
 
     get copySiteFilesTask() {
-        let destino = this.rutaJoomlaComSite;
-        let origen  = `${this.rutaSiteDesde}**/*.*`;
+        if (this.config.site.folderName === null) {
+            return;
+        }
+        let dest = this.config.site.dest;
+        let origen = `${this.config.site.src}**/*.*`;
+        let taskName = `${this.taskName}Site`;
 
-        task(`copyComponent${this.cNombre}Site`, series(`cleanComponent${this.cNombre}Site`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
-
-        this.copyComponent.push(`copyComponent${this.cNombre}Site`);
+        addCopyTask(origen, dest, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, dest, taskName, this.copyProExtensionTasks);
     }
 
     get copySiteLanguagesTask() {
-        let siteLanguages = this.siteLanguageFileNames
+        if (this.config.site.language === null) {
+            return;
+        }
+        let siteLanguages = this.getLanguageFileNames('site');
 
         if (siteLanguages === false)
             return;
-        let destino = this.rutaJoomlaLanguageSite;
-        let origen  = siteLanguages.map(l => `${this.rutaSiteDesde}language/${l}`)
+        let destino = this.config.site.language.dest;
+        let origen  = siteLanguages.map(l => `${this.config.site.language.src}${l}`)
+        let taskName = `${this.taskName}SiteLanguage`;
 
-        task(`copyComponent${this.cNombre}SiteLanguage`, series(`cleanComponent${this.cNombre}SiteLanguage`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
-
-        this.copyComponent.push(`copyComponent${this.cNombre}SiteLanguage`);
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
     }
 
     get copyMediaFilesTask() {
-        let destino = this.rutaJoomlaComMedia;
-        let origen = `${this.rutaDesde}media/**/*.*`
+        if (this.config.media.dest === null) {
+            return;
+        }
+        let destino = this.config.media.dest;
+        let origen = `${this.config.media.src}**/*.*`
+        let taskName = `${this.taskName}Media`;
 
-        task(`copyComponent${this.cNombre}Media`, series(`cleanComponent${this.cNombre}Media`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
+    }
 
-        this.copyComponent.push(`copyComponent${this.cNombre}Media`);
+    get copyApiFilesTask() {
+        if (this.config.api.dest === null) {
+            return;
+        }
+        let destino = this.config.api.dest;
+        let origen = `${this.config.api.src}**/*.*`
+        let taskName = `${this.taskName}Api`;
+
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
     }
 
     get copyAdminFilesTask() {
-        let destino = this.rutaJoomlaComAdmin;
-        let origen  = `${this.rutaAdminDesde}**/*.*`
+        let destino = this.config.admin.dest;
+        let origen  = `${this.config.admin.src}**/*.*`;
+        let taskName = `${this.taskName}Admin`;
 
-        task(`copyComponent${this.cNombre}Admin`, series(`cleanComponent${this.cNombre}Admin`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
-
-        this.copyComponent.push(`copyComponent${this.cNombre}Admin`);
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
     }
 
     get copyAdminLanguagesTask() {
-        let destino = this.rutaJoomlaLanguageAdmin;
-        let origen  = this.adminLanguageFileNames.map(l => `${this.rutaAdminDesde}language/${l}`)
+        if (this.config.admin.language === null) {
+            return;
+        }
+        let destino = this.config.admin.language.dest;
+        let origen  = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.src}${l}`)
+        let taskName = `${this.taskName}AdminLanguage`;
 
-        task(`copyComponent${this.cNombre}AdminLanguage`, series(`cleanComponent${this.cNombre}AdminLanguage`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
-
-        this.copyComponent.push(`copyComponent${this.cNombre}AdminLanguage`);
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
     }
 
     get copyManifestFile() {
-        let destino = this.rutaJoomlaComAdmin;
-        let origen = `${this.rutaDesde}${this.nombre}.xml`
+        if (this.config.useConfig === true) {
+            return;
+        }
+        let destino = this.config.admin.dest;
+        let origen = `${this.config.src}${this.manifestFileName}`
+        let taskName = `${this.taskName}Manifest`;
 
-        task(`copyComponent${this.cNombre}Manifest`, series(`cleanComponent${this.cNombre}Manifest`, () => {
-            return src(origen, { allowEmpty: true })
-            .pipe(dest(destino))
-        }))
-
-        this.copyComponent.push(`copyComponent${this.cNombre}Manifest`);
+        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
+        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
     }
 
     // watch Task
     get watchTask() {
-        let watchPath = `${this.rutaDesde}**/*`
-        task(`watchComponent${this.cNombre}`, () => {
-            watch([watchPath], series(`copyComponent${this.cNombre}`));
+        task(`watch${this.taskName}`, () => {
+            // watch admin files
+            watch(`${this._config.admin.src}**/*`, addWatchTaskSeries(`${this.taskName}Admin`, this.pro));
+            if (this._config.admin.language !== null) {
+                watch(`${this._config.admin.language.src}**/*`, addWatchTaskSeries(`${this.taskName}AdminLanguage`, this.pro));
+            }
+
+            // watch site files
+            watch(`${this._config.site.src}**/*`, addWatchTaskSeries(`${this.taskName}Site`, this.pro));
+            if (this._config.site.language !== null) {
+                watch(`${this._config.site.language.src}**/*`, addWatchTaskSeries(`${this.taskName}SiteLanguage`, this.pro));
+            }
+
+            // watch media and api files
+            if (this._config.media.src !== null) {
+                watch(`${this._config.media.src}**/*`, addWatchTaskSeries(`${this.taskName}Media`, this.pro));
+            }
+            if (this._config.api.src !== null) {
+                watch(`${this._config.api.src}**/*`, addWatchTaskSeries(`${this.taskName}Api`, this.pro));
+            }
+
+            // watch manifest file
+            if (this.manifestFullFileName !== null) {
+                watch(this.manifestFullFileName, addWatchTaskSeries(`${this.taskName}Manifest`, this.pro));
+            }
         });
 
-        return `watchComponent${this.cNombre}`;
+        return `watch${this.taskName}`;
     }
 
     // release Task
     get releaseTask() {
-        let desde = this.rutaDesde + '**';
-        let destino = this.releaseDest;
-        let filename = this.zipFileName;
+        let dest = this._config.dest.release;
+        let zipFileName = this.zipFileName;
+        let folders = this._config.release.folders;
+        let files = this._config.release.files;
+        let manifestObj = this._config.release.manifestObj;
+        let proConfig = this.pro;
+        let proZipFileName = this.proZipFileName;
 
-        task(`releaseComponent${this.cNombre}`, function(cb) {
-            return src(desde)
-                .pipe(GulpZip(filename))
-                .pipe(dest(destino))
+        task(`release${this.taskName}`, function(cb) {
+            releaseExtension(dest, zipFileName, folders, files, manifestObj, proConfig, proZipFileName);
+            cb();
         })
 
-        return `releaseComponent${this.cNombre}`;        
+        return `release${this.taskName}`;        
     }
 
     // Upload Task
     get uploadTask() {
-        let desde = this.releaseDest + this.zipFileName;
-        let fichero = this.uploadDest + this.zipFileName;
+        let desde = this.config.dest.release + this.zipFileName;
+        let fichero = this.config.dest.upload + this.zipFileName;
 
-        task(`uploadComponent${this.cNombre}`, async function() {
+        task(`upload${this.taskName}`, async function() {
             await uploadFile(desde, fichero);
         })
 
-        return `uploadComponent${this.cNombre}`;
+        return `upload${this.taskName}`;
     }
 
     // ARS Task
     get arsTask() {
-        
-        if (this.ars === undefined) {
-            this.ars = {};
-        }
-        
         // if empty object, create a task that does nothing
-        if (Object.keys(this.ars).length === 0) {
-            task(`arsComponent${this.cNombre}`, async function() {
+        if (this.config.ars === null) {
+            task(`ars${this.taskName}`, async function() {
                 return;
             });
         } else {
-            let ars = new ARS(this);
+            this.config.zipFileName = this.zipFileName;
+            this.config.version = this.version;
+            let ars = new ARS(this.config);
 
-            task(`arsComponent${this.cNombre}`, async function() {
+            task(`ars${this.taskName}`, async function() {
                 await ars.addNewItem();
             });
         }
 
-        return `arsComponent${this.cNombre}`;
+        return `ars${this.taskName}`;
     }
 }
 
