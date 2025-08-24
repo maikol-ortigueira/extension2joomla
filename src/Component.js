@@ -1,8 +1,9 @@
 const Extension = require('./Extension');
-const { checkUndefinedLanguages, uploadFile, releaseExtension, addCleanTask, addCopyTask, addCopyProTask, addWatchTaskSeries } = require("./utils");
+const { checkUndefinedLanguages, uploadFile, releaseExtension, addCleanTask, addCopyTask, addCopyProTask, addWatchTaskSeries, addCleanSingleFileTask, addCopySingleFileTask } = require("./utils");
 const { task, series, watch } = require('gulp');
 const ARS = require('./ARS/ARS');
 const capitalize = require('capitalize');
+const path = require('path');
 
 class Component extends Extension {
     constructor(extension) {
@@ -16,7 +17,9 @@ class Component extends Extension {
         this.type = 'component';
 
         this.taskName = `Component${capitalize(this._name)}`;
-   }
+        this.langAdminFilesSrc = [];
+        this.langSiteFilesSrc = [];
+    }
 
     addSourcePaths(config) {
         config = super.addSourcePaths(config);
@@ -45,7 +48,7 @@ class Component extends Extension {
 
     addDestinyPaths(config) {
         config = super.addDestinyPaths(config);
-        
+
         // admin destiny paths
         config.admin.dest = `${this.dPath}administrator/components/${this.prefixedName}/`;
         config.admin.language.dest = config.admin.language.folderName !== undefined ? `${this.dPath}administrator/language/` : null;
@@ -96,7 +99,10 @@ class Component extends Extension {
         if (siteLanguages === false)
             return
         let origen = siteLanguages.map(l => `${this.config.site.language.dest}${l}`);
-        addCleanTask(origen, `${this.taskName}SiteLanguage`, this.cleanExtensionTasks);
+
+        origen.forEach((o, index) => {
+            addCleanSingleFileTask(o, `${this.taskName}SiteLanguage${index}`, this.cleanExtensionTasks);
+        });
     }
 
     get cleanMediaFilesTask() {
@@ -125,7 +131,9 @@ class Component extends Extension {
         }
         let origen = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.dest}${l}`);
 
-        addCleanTask(origen, `${this.taskName}AdminLanguage`, this.cleanExtensionTasks);
+        origen.forEach((o, index) => {
+            addCleanSingleFileTask(o, `${this.taskName}AdminLanguage${index}`, this.cleanExtensionTasks);
+        });
     }
 
     get cleanManifestFileTask() {
@@ -170,12 +178,15 @@ class Component extends Extension {
 
         if (siteLanguages === false)
             return;
-        let destino = this.config.site.language.dest;
-        let origen  = siteLanguages.map(l => `${this.config.site.language.src}${l}`)
+        let destino = siteLanguages.map(l => `${this.config.site.language.dest}${l}`);
+        let origen = siteLanguages.map(l => `${this.config.site.language.src}${l}`)
         let taskName = `${this.taskName}SiteLanguage`;
 
-        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
-        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
+        origen.forEach((o, index) => {
+            addCopySingleFileTask(o, path.dirname(destino[index]), `${taskName}${index}`, this.copyExtensionTasks, this.pro);
+            addCopyProTask(this.pro, o, destino[index], `${taskName}${index}`, this.copyProExtensionTasks);
+            this.langSiteFilesSrc.push(o);
+        });
     }
 
     get copyMediaFilesTask() {
@@ -204,7 +215,7 @@ class Component extends Extension {
 
     get copyAdminFilesTask() {
         let destino = this.config.admin.dest;
-        let origen  = `${this.config.admin.src}**/*.*`;
+        let origen = `${this.config.admin.src}**/*.*`;
         let taskName = `${this.taskName}Admin`;
 
         addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
@@ -215,12 +226,15 @@ class Component extends Extension {
         if (this.config.admin.language === null) {
             return;
         }
-        let destino = this.config.admin.language.dest;
-        let origen  = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.src}${l}`)
+        let destino = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.dest}${l}`);
+        let origen = this.getLanguageFileNames('admin').map(l => `${this.config.admin.language.src}${l}`);
         let taskName = `${this.taskName}AdminLanguage`;
 
-        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
-        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
+        origen.forEach((o, index) => {
+            addCopySingleFileTask(o, path.dirname(destino[index]), `${taskName}${index}`, this.copyExtensionTasks, this.pro);
+            addCopyProTask(this.pro, o, destino[index], `${taskName}${index}`, this.copyProExtensionTasks);
+            this.langAdminFilesSrc.push(o);
+        });
     }
 
     get copyManifestFile() {
@@ -241,13 +255,17 @@ class Component extends Extension {
             // watch admin files
             watch(`${this._config.admin.src}**/*`, addWatchTaskSeries(`${this.taskName}Admin`, this.pro));
             if (this._config.admin.language !== null) {
-                watch(`${this._config.admin.language.src}**/*`, addWatchTaskSeries(`${this.taskName}AdminLanguage`, this.pro));
+                this.langAdminFilesSrc.forEach((l, index) => {
+                    watch(l, addWatchTaskSeries(`${this.taskName}AdminLanguage${index}`, this.pro));
+                });
             }
 
             // watch site files
             watch(`${this._config.site.src}**/*`, addWatchTaskSeries(`${this.taskName}Site`, this.pro));
             if (this._config.site.language !== null) {
-                watch(`${this._config.site.language.src}**/*`, addWatchTaskSeries(`${this.taskName}SiteLanguage`, this.pro));
+                this.langSiteFilesSrc.forEach((l, index) => {
+                    watch(l, addWatchTaskSeries(`${this.taskName}SiteLanguage${index}`, this.pro));
+                });
             }
 
             // watch media and api files
@@ -277,12 +295,12 @@ class Component extends Extension {
         let proConfig = this.pro;
         let proZipFileName = this.proZipFileName;
 
-        task(`release${this.taskName}`, function(cb) {
+        task(`release${this.taskName}`, function (cb) {
             releaseExtension(dest, zipFileName, folders, files, manifestObj, proConfig, proZipFileName);
             cb();
         })
 
-        return `release${this.taskName}`;        
+        return `release${this.taskName}`;
     }
 
     // Upload Task
@@ -290,7 +308,7 @@ class Component extends Extension {
         let desde = this.config.dest.release + this.zipFileName;
         let fichero = this.config.dest.upload + this.zipFileName;
 
-        task(`upload${this.taskName}`, async function() {
+        task(`upload${this.taskName}`, async function () {
             await uploadFile(desde, fichero);
         })
 
@@ -301,7 +319,7 @@ class Component extends Extension {
     get arsTask() {
         // if empty object, create a task that does nothing
         if (this.config.ars === null) {
-            task(`ars${this.taskName}`, async function() {
+            task(`ars${this.taskName}`, async function () {
                 return;
             });
         } else {
@@ -309,7 +327,7 @@ class Component extends Extension {
             this.config.version = this.version;
             let ars = new ARS(this.config);
 
-            task(`ars${this.taskName}`, async function() {
+            task(`ars${this.taskName}`, async function () {
                 await ars.addNewItem();
             });
         }

@@ -39,7 +39,7 @@ const has = (extType) => {
         case 'packages':
             hasExtensions = extConfig.package !== undefined
                 && extConfig.package.pack_extensions !== undefined
-                && extConfig.package.pack_extensions == true 
+                && extConfig.package.pack_extensions == true
                 && extConfig.package.pack_extensions !== ''
                 && extConfig.package.version !== undefined
                 && extConfig.package.version !== ''
@@ -279,7 +279,7 @@ const releaseExtension = (dest, zipFileName, folders, files, manifestObj = null,
     let pro_suffix = proConfig.pro_suffix;
     let pro_files_suffix = proConfig.pro_files_suffix;
     let hasPro = false;
-    let removePro = {files: [], folders: []};
+    let removePro = { files: [], folders: [] };
 
     if (pro_config !== null) {
         hasPro = pro_config.hasPro !== undefined ? pro_config.hasPro : hasPro;
@@ -467,6 +467,14 @@ const addCleanTask = (from, taskName, tasksArray, excludeFiles = []) => {
     tasksArray.push(`clean${taskName}`);
 }
 
+const addCleanSingleFileTask = (filename, taskName, tasksArray) => {
+    task(`clean${taskName}`, function () {
+        return src(filename, { read: false, allowEmpty: true }).pipe(clean({ force: true }));
+    });
+
+    tasksArray.push(`clean${taskName}`);
+}
+
 const addCopyTask = (from, to, taskName, tasksArray, config) => {
     let proSuffix = '-pro';
     let removeFiles = [];
@@ -508,6 +516,14 @@ const addCopyTask = (from, to, taskName, tasksArray, config) => {
             .pipe(dest(to));
     }));
 
+    tasksArray.push(`copy${taskName}`);
+}
+
+const addCopySingleFileTask = (from, to, taskName, tasksArray) => {
+    task(`copy${taskName}`, series(`clean${taskName}`, () => {
+        return src(from, { allowEmpty: true })
+            .pipe(dest(to));
+    }));
     tasksArray.push(`copy${taskName}`);
 }
 
@@ -564,7 +580,9 @@ module.exports = {
     checkUndefinedLanguages,
     releaseExtension,
     addCleanTask,
+    addCleanSingleFileTask,
     addCopyTask,
+    addCopySingleFileTask,
     addCopyProTask,
     addWatchTaskSeries,
     sourcePath,

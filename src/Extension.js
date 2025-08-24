@@ -333,6 +333,10 @@ class Extension {
                 } else {
                     console.log(`${capitalize(client)} Language file ${l}/${this.langfileName}.ini does not exist`);
                 }
+
+                if (fs.existsSync(`${language.src}${l}/${this.langfileName}.sys.ini`)) {
+                    langFiles.push(`${l}/${this.langfileName}.sys.ini`)
+                }
             });
         } else {
             // ckeck if language file exists
@@ -340,6 +344,10 @@ class Extension {
                 langFiles.push(`${languages}/${this.langfileName}.ini`)
             } else {
                 console.log(`${capitalize(client)} Language file ${languages}/${this.langfileName}.ini does not exist`);
+            }
+
+            if (fs.existsSync(`${language.src}${languages}/${this.langfileName}.sys.ini`)) {
+                langFiles.push(`${languages}/${this.langfileName}.sys.ini`)
             }
         }
 
