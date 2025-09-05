@@ -1,6 +1,6 @@
 const { watch, task, series } = require('gulp');
 const { ManifestCreator, ManifestReader } = require('./Manifest');
-const { parsePath, sourcePath, destPath, releasePath, checkUndefinedLanguages, addCleanTask, addCopyTask, addCopyProTask, addWatchTaskSeries, releaseExtension, uploadFile } = require('./utils');
+const { parsePath, sourcePath, destPath, releasePath, checkUndefinedLanguages, addCleanTask, addCopyTask, addCopyProTask, addWatchTaskSeries, releaseExtension, uploadFile, addCleanSingleFileTask, addCopySingleFileTask } = require('./utils');
 const capitalize = require('capitalize');
 const fs = require('fs');
 const ARS = require('./ARS/ARS');
@@ -30,6 +30,8 @@ class Extension {
         this.mainSource = `${this.sPath}${extension.ms}/${this._name}/`;
         this.ars = extension.ars !== undefined ? extension.ars : null;
         this.pro = extension.pro;
+
+        this.langFilesSrc = [];
 
         if (extension.config !== undefined && extension.config !== null && extension.config.useConfig == true) {
             this.version = extension.version;
@@ -389,7 +391,10 @@ class Extension {
             return;
 
         let origen = langs.map(l => `${this.config.ext.language.dest}${l}`);
-        addCleanTask(origen, `${this.taskName}Language`, this.cleanExtensionTasks);
+
+        origen.forEach((o, index) => {
+            addCleanSingleFileTask(o, `${this.taskName}Language${index}`, this.cleanExtensionTasks);
+        });
     }
 
     get cleanManifestFileTask() {
@@ -440,12 +445,15 @@ class Extension {
 
         if (langs === false)
             return;
-        let destino = this.config.ext.language.dest;
-        let origen = langs.map(l => `${this.config.ext.language.src}${l}`)
+        let destino = langs.map(l => `${this.config.ext.language.dest}${l}`);
+        let origen = langs.map(l => `${this.config.ext.language.src}${l}`);
         let taskName = `${this.taskName}Language`;
 
-        addCopyTask(origen, destino, taskName, this.copyExtensionTasks, this.pro);
-        addCopyProTask(this.pro, origen, destino, taskName, this.copyProExtensionTasks);
+        origen.forEach((o, index) => {
+            addCopySingleFileTask(o, destino[index], `${taskName}${index}`, this.copyExtensionTasks, this.pro);
+            addCopyProTask(this.pro, o, destino[index], `${taskName}${index}`, this.copyProExtensionTasks);
+            this.langFilesSrc.push(o);
+        });
     }
 
     get copyManifestFileTask() {
@@ -471,7 +479,9 @@ class Extension {
         task(`watch${this.taskName}`, () => {
             watch(`${this._config.ext.src}**/*`, addWatchTaskSeries(`${this.taskName}Files`, this.pro));
             if (this._config.ext.language !== null) {
-                watch(`${this._config.ext.language.src}**/*`, addWatchTaskSeries(`${this.taskName}Language`, this.pro));
+                this.langFilesSrc.forEach((l, index) => {
+                    watch(l, addWatchTaskSeries(`${this.taskName}Language${index}`, this.pro));
+                });
             }
 
             // watch media and api files
