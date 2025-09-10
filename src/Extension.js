@@ -181,7 +181,7 @@ class Extension {
 
             // Script file
             if (config.scriptfile !== undefined) {
-                config.release.files.push(`${this.mainSource}${config.scriptFile}`);
+                config.release.files.push(`${this.mainSource}${config.scriptfile}`);
             }
         } else {
             config.extName = this._name;
